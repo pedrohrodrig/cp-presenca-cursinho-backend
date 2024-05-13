@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Django Debugger",
+            "type": "python",
+            "request": "launch",
+            "stopOnEntry": false,
+            // Change next line to match your virtual environment
+            "pythonPath": "C:\\Users\\phrdv\\.virtualenvs\\backend-yKOXUy-u\\Scripts\\python.exe",
+            "program": "${workspaceFolder}\\backend\\manage.py",
+            "args": [
+                "runserver",
+                "--no-color",
+            ],
+            "debugOptions": [
+                "WaitOnAbnormalExit",
+                "WaitOnNormalExit",
+                "RedirectOutput",
+                "DjangoDebugging"
+            ]
+        }
+    ]
+}
