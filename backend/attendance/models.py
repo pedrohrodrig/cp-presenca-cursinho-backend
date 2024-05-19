@@ -40,3 +40,4 @@ class Attendance(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="attendances")
     datetime = models.DateTimeField(auto_now_add=True, blank=True)
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
+
