@@ -11,6 +11,7 @@ class Class(models.Model):
     course = models.CharField(max_length=10) # TODO: criar modelo com ChoiceField
     subjects = models.ManyToManyField(Subject, related_name="classes")
 
+
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
     course_class = models.OneToOneField(Class, on_delete=models.CASCADE, related_name="class")
@@ -36,4 +37,5 @@ class Attendance(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendances')
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='attendances')
     datetime = models.DateTimeField(auto_now_add=True, blank=True)
-    status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)        
+    status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)    
+    
