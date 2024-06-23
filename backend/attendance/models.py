@@ -24,9 +24,10 @@ class Lesson(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lessons")
 
 
-class LessonDatetime(models.Model):
+class LessonSession(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="datetimes")
     datetime = models.DateTimeField()
+    is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
     # TODO: conferir se diferentes aulas tem duração diferente
 
 
@@ -37,6 +38,6 @@ class Attendance(models.Model):
         JUSTIFIED = "J", _("Justified")
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="attendances")
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="attendances")
+    lesson_session = models.ForeignKey(LessonSession, on_delete=models.CASCADE, related_name="attendances")
     datetime = models.DateTimeField(auto_now_add=True, blank=True)
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
