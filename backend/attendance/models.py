@@ -26,7 +26,7 @@ class Lesson(models.Model):
 
 class LessonSession(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="datetimes")
-    datetime = models.DateTimeField()
+    time = models.TimeField()
     is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
     # TODO: conferir se diferentes aulas tem duração diferente
 

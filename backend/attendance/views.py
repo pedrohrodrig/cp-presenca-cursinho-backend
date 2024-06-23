@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .models import Lesson, LessonSession
-from .serializers import LessonSerializer, AttendanceRegistrabilitySerializer
+from .models import Attendance, Lesson, LessonSession
+from .serializers import AttendanceSerializer, LessonSerializer
 
 # Create your views here.
 
@@ -23,3 +23,25 @@ class AttendanceRegistrabilityView(ViewSet):
         lesson_session.save()
 
         return Response(status=status.HTTP_200_OK)
+    
+
+class AttendanceView(ModelViewSet):
+    queryset = Attendance.objects.all()
+    serializer_class = AttendanceSerializer
+
+    def create(self, request):
+        serializer = AttendanceSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        lesson_session_id = serializer.validated_data["lesson_session"]
+        lesson_session = get_object_or_404(LessonSession.objects.all(), pk=lesson_session_id)
+
+        if not lesson_session.is_attendance_registrable:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+        
+        attendance = Attendance.objects.create(**serializer.validated_data)
+        attendance_serialized = AttendanceSerializer(attendance)
+
+        return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
+
