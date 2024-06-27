@@ -6,6 +6,9 @@ from django.utils.translation import gettext_lazy as _
 class Subject(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 class Class(models.Model):
     name = models.CharField(max_length=30, unique=True)
@@ -13,15 +16,24 @@ class Class(models.Model):
     course = models.CharField(max_length=10)  # TODO: criar modelo com ChoiceField
     subjects = models.ManyToManyField(Subject, related_name="classes")
 
+    def __str__(self):
+        return f"{self.name} - {self.course}"
+
 
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
     course_class = models.OneToOneField(Class, on_delete=models.CASCADE, related_name="students")
 
+    def __str__(self):
+        return self.full_name
+
 
 class Lesson(models.Model):
     course_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="lessons")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lessons")
+
+    def __str__(self):
+        return f"{self.subject} - {self.course_class.name}"
 
 
 class LessonSession(models.Model):
@@ -29,6 +41,9 @@ class LessonSession(models.Model):
     time = models.TimeField()
     is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
     # TODO: conferir se diferentes aulas tem duração diferente
+
+    def __str__(self):
+        return f"{self.lesson} - {self.time}"
 
 
 class Attendance(models.Model):
@@ -41,3 +56,6 @@ class Attendance(models.Model):
     lesson_session = models.ForeignKey(LessonSession, on_delete=models.CASCADE, related_name="attendances")
     datetime = models.DateTimeField(auto_now_add=True, blank=True)
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
+
+    def __str__(self):
+        return f"{self.student} - {self.lesson_session.lesson.subject.name}/{self.lesson_session.time} - {self.status}"
