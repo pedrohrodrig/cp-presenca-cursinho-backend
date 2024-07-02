@@ -7,27 +7,40 @@ class Subject(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
 
-class Class(models.Model):
+class StudentClass(models.Model):
     name = models.CharField(max_length=30, unique=True)
     classroom = models.CharField(max_length=10, blank=True, null=True)
-    course = models.CharField(max_length=10)  # TODO: criar modelo com ChoiceField
-    subjects = models.ManyToManyField(Subject, related_name="classes")
+    course = models.CharField(max_length=100)  # TODO: criar modelo com ChoiceField
+    subjects = models.ManyToManyField(Subject, related_name="student_classes")
 
 
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
-    course_class = models.OneToOneField(Class, on_delete=models.CASCADE, related_name="students")
+    course_class = models.OneToOneField(StudentClass, on_delete=models.CASCADE, related_name="students")
 
+
+class LessonRecurrency(models.Model):
+    course_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="lesson_recurrences")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lesson_recurrences")
+
+
+class LessonRecurrentDatetime(models.Model):
+    lesson_recurrency = models.ForeignKey(LessonRecurrency, on_delete=models.CASCADE, related_name="regular_datetimes")
+    datetime = models.DateTimeField()
+
+    @property
+    def day_of_week(self):
+        # 0 = monday / 6 = sunday
+        return self.datetime.weekday()
 
 class Lesson(models.Model):
-    course_class = models.ForeignKey(Class, on_delete=models.CASCADE, related_name="lessons")
-    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lessons")
-
-
-class LessonDatetime(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="datetimes")
-    datetime = models.DateTimeField()
-    # TODO: conferir se diferentes aulas tem duração diferente
+    lesson_recurrency = models.ForeignKey(LessonRecurrency, on_delete=models.CASCADE, related_name="lessons")
+    name = models.CharField(max_length=100)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    attendance_start_datetime = models.DateTimeField()
+    attendance_end_datetime = models.DateTimeField()
+    is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
 
 
 class Attendance(models.Model):
@@ -38,5 +51,5 @@ class Attendance(models.Model):
 
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name="attendances")
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="attendances")
-    datetime = models.DateTimeField(auto_now_add=True, blank=True)
+    register_datetime = models.DateTimeField(auto_now_add=True, blank=True)
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
