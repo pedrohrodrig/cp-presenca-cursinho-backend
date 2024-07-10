@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .models import Attendance, Lesson, LessonSession, Student
-from .serializers import AttendanceSerializer, LessonSerializer, LessonSessionSerializer, StudentSerializer
+from .models import Attendance, Lesson, Student
+from .serializers import AttendanceSerializer, LessonSerializer, StudentSerializer
 
 # Create your views here.
 
@@ -16,14 +16,14 @@ class LessonView(ModelViewSet):
 
 class AttendanceRegistrabilityView(ViewSet):
     def update_attendance_registrability(self, request, pk):
-        lesson_session = get_object_or_404(LessonSession.objects.all(), pk=pk)
+        lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
 
-        lesson_session.is_attendance_registrable = not lesson_session.is_attendance_registrable
-        lesson_session.save()
+        lesson.is_attendance_registrable = not lesson.is_attendance_registrable
+        lesson.save()
 
-        lesson_session_serialized = LessonSessionSerializer(lesson_session)
+        lesson_serialized = LessonSerializer(lesson)
 
-        return Response(lesson_session_serialized.data, status=status.HTTP_200_OK)
+        return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
 
 class AttendanceView(ModelViewSet):
