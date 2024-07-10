@@ -11,7 +11,7 @@ urlpatterns = format_suffix_patterns(
             LessonView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
         ),
         path(
-            "session/<int:pk>/update_attendance_registrability/",
+            "lesson/<int:pk>/update_attendance_registrability/",
             AttendanceRegistrabilityView.as_view({"patch": "update_attendance_registrability"}),
         ),
         path("attendance/", AttendanceView.as_view({"post": "create"})),
