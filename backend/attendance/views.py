@@ -3,8 +3,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .models import Attendance, Lesson, LessonSession
-from .serializers import AttendanceSerializer, LessonSerializer, LessonSessionSerializer
+from .models import Attendance, Lesson, LessonSession, Student
+from .serializers import AttendanceSerializer, LessonSerializer, LessonSessionSerializer, StudentSerializer
 
 # Create your views here.
 
@@ -45,3 +45,8 @@ class AttendanceView(ModelViewSet):
         attendance_serialized = AttendanceSerializer(attendance)
 
         return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
+    
+
+class StudentView(ModelViewSet):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
