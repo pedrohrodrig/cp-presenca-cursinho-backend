@@ -6,6 +6,9 @@ from django.utils.translation import gettext_lazy as _
 class Subject(models.Model):
     name = models.CharField(max_length=30, unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 class StudentClass(models.Model):
     name = models.CharField(max_length=30, unique=True)
@@ -13,10 +16,16 @@ class StudentClass(models.Model):
     course = models.CharField(max_length=100)  # TODO: criar modelo com ChoiceField
     subjects = models.ManyToManyField(Subject, related_name="student_classes")
 
+    def __str__(self):
+        return f"{self.name} - {self.course}"
+
 
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
     course_class = models.OneToOneField(StudentClass, on_delete=models.CASCADE, related_name="students")
+
+    def __str__(self):
+        return self.full_name
 
 
 class LessonRecurrency(models.Model):
@@ -42,6 +51,9 @@ class Lesson(models.Model):
     attendance_end_datetime = models.DateTimeField()
     is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
 
+    def __str__(self):
+        return f"{self.lesson} - {self.time}"
+
 
 class Attendance(models.Model):
     class AttendanceChoices(models.TextChoices):
@@ -54,3 +66,5 @@ class Attendance(models.Model):
     register_datetime = models.DateTimeField(auto_now_add=True, blank=True)
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
 
+    def __str__(self):
+        return f"{self.student} - {self.lesson_session.lesson.subject.name}/{self.lesson_session.time} - {self.status}"
