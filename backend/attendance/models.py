@@ -42,6 +42,7 @@ class LessonRecurrentDatetime(models.Model):
         # 0 = monday / 6 = sunday
         return self.datetime.weekday()
 
+
 class Lesson(models.Model):
     lesson_recurrency = models.ForeignKey(LessonRecurrency, on_delete=models.CASCADE, related_name="lessons")
     name = models.CharField(max_length=100)
@@ -50,6 +51,7 @@ class Lesson(models.Model):
     attendance_start_datetime = models.DateTimeField()
     attendance_end_datetime = models.DateTimeField()
     is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
+    passkey = models.CharField(max_length=10, null=False, blank=False, default="1234567890")
 
     def __str__(self):
         return f"{self.lesson} - {self.time}"
