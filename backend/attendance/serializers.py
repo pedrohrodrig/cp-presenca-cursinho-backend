@@ -24,7 +24,7 @@ class LessonSerializer(serializers.ModelSerializer):
 class LessonPasskeySerializer(serializers.ModelSerializer):
     class Meta:
         model = Lesson
-        fields = ["passkey"]  # Apenas o campo passkey
+        fields = ["is_attendance_registrable"]  # Apenas o campo passkey
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
