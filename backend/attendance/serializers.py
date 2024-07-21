@@ -47,6 +47,12 @@ class StudentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class StudentClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentClass
+        fields = "__all__"
+
+
 class LessonWithDetailsSerializer(serializers.ModelSerializer):
     subject = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
