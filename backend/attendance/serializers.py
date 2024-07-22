@@ -45,10 +45,10 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
         return obj.lesson_recurrency.subject.name
     
     def get_course(self, obj):
-        return obj.lesson_recurrency.course_class.course
+        return obj.lesson_recurrency.student_class.course
     
     def get_student_class(self, obj):
-        return obj.lesson_recurrency.course_class.name
+        return obj.lesson_recurrency.student_class.name
 
     class Meta:
         model = Lesson

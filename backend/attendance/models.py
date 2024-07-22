@@ -22,14 +22,14 @@ class StudentClass(models.Model):
 
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
-    course_class = models.OneToOneField(StudentClass, on_delete=models.CASCADE, related_name="students")
+    student_class = models.OneToOneField(StudentClass, on_delete=models.CASCADE, related_name="students")
 
     def __str__(self):
         return self.full_name
 
 
 class LessonRecurrency(models.Model):
-    course_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="lesson_recurrences")
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="lesson_recurrences")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lesson_recurrences")
 
 
@@ -52,7 +52,7 @@ class Lesson(models.Model):
     is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
 
     def __str__(self):
-        return f"{self.lesson} - {self.time}"
+        return f"{self.lesson_recurrency} - {self.start_datetime}"
 
 
 class Attendance(models.Model):
@@ -67,4 +67,4 @@ class Attendance(models.Model):
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
 
     def __str__(self):
-        return f"{self.student} - {self.lesson_session.lesson.subject.name}/{self.lesson_session.time} - {self.status}"
+        return f"{self.student} - {self.lesson.lesson_recurrency.subject.name}/{self.lesson_session.time} - {self.status}"
