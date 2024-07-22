@@ -1,10 +1,11 @@
+import datetime
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .models import Attendance, Lesson, Student
-from .serializers import AttendanceSerializer, LessonSerializer, StudentSerializer
+from .serializers import AttendanceSerializer, LessonSerializer, LessonWithDetailsSerializer, StudentSerializer
 
 # Create your views here.
 
@@ -12,6 +13,13 @@ from .serializers import AttendanceSerializer, LessonSerializer, StudentSerializ
 class LessonView(ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+    def list_next_lessons_with_details(self, request):
+        queryset = Lesson.objects.filter(start_datetime__gte=datetime.now())
+
+        lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
+
+        return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
 
 class AttendanceRegistrabilityView(ViewSet):
