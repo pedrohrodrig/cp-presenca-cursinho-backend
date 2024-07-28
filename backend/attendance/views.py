@@ -17,6 +17,7 @@ class LessonView(ModelViewSet):
         lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
 
         lesson.passkey = request.passkey
+        lesson.save()
         lesson_serialized = LessonSerializer(lesson)
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
