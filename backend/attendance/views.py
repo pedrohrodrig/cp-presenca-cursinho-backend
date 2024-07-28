@@ -43,9 +43,9 @@ class AttendanceView(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        lesson_session = serializer.validated_data["lesson_session"]
+        lesson = serializer.validated_data["lesson"]
 
-        if not lesson_session.is_attendance_registrable:
+        if not lesson.is_attendance_registrable:
             # TODO: melhorar codigo de erro para usuario
             return Response("Attendance is not registrable", status=status.HTTP_403_FORBIDDEN)
 

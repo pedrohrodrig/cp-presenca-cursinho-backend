@@ -26,7 +26,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
         fields = [
             "status",
             "student",
-            "lesson_session",
+            "lesson",
         ]
 
         

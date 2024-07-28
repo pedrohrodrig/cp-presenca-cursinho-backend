@@ -67,4 +67,4 @@ class Attendance(models.Model):
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
 
     def __str__(self):
-        return f"{self.student} - {self.lesson.lesson_recurrency.subject.name}/{self.lesson_session.time} - {self.status}"
+        return f"{self.student} - {self.lesson.lesson_recurrency.subject.name}/{self.lesson.start_datetime} - {self.status}"
