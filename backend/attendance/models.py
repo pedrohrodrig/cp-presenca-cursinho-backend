@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 
 # Create your models here.
@@ -49,7 +50,21 @@ class Lesson(models.Model):
     end_datetime = models.DateTimeField()
     attendance_start_datetime = models.DateTimeField()
     attendance_end_datetime = models.DateTimeField()
-    is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
+    is_manual_attendance_checked = models.BooleanField(blank=True, null=True, default=False)
+    manual_attendance_last_time_edited = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def is_attendance_registrable(self):
+        if self.manual_attendance_last_time_edited < self.attendance_start_datetime or \
+            self.manual_attendance_last_time_edited > self.attendance_end_datetime:
+            return self.is_manual_attendance_checked
+        
+        manual_change_in_attendance_automated_period = self.attendance_start_datetime <= self.manual_attendance_last_time_edited <= self.attendance_end_datetime
+
+        if manual_change_in_attendance_automated_period and not self.is_manual_attendance_checked:
+            return False
+        
+        return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
 
     def __str__(self):
         return f"{self.lesson_recurrency} - {self.start_datetime}"
