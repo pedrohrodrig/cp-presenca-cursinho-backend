@@ -26,7 +26,7 @@ class AttendanceRegistrabilityView(ViewSet):
     def update_attendance_registrability(self, request, pk):
         lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
 
-        lesson.is_attendance_registrable = not lesson.is_attendance_registrable
+        lesson.is_manual_attendance_checked = not lesson.is_attendance_registrable
         lesson.manual_attendance_last_time_edited = timezone.now()
         lesson.save()
 
@@ -45,14 +45,18 @@ class AttendanceView(ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         lesson = serializer.validated_data["lesson"]
+        student = serializer.validated_data["student"]
 
         if not lesson.is_attendance_registrable:
             # TODO: melhorar codigo de erro para usuario
             return Response("Attendance is not registrable", status=status.HTTP_403_FORBIDDEN)
+        
+        if lesson.lesson_recurrency.student_class != student.student_class:
+            return Response("Student do not belong to class", status=status.HTTP_403_FORBIDDEN)
 
         attendance, created = Attendance.objects.get_or_create(**serializer.validated_data)
 
-        if created:
+        if not created:
             # TODO: melhorar codigo de erro para usuario
             return Response("Attendance already registered", status=status.HTTP_400_BAD_REQUEST)
 

@@ -23,7 +23,7 @@ class StudentClass(models.Model):
 
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
-    student_class = models.OneToOneField(StudentClass, on_delete=models.CASCADE, related_name="students")
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="students")
 
     def __str__(self):
         return self.full_name
@@ -51,10 +51,13 @@ class Lesson(models.Model):
     attendance_start_datetime = models.DateTimeField()
     attendance_end_datetime = models.DateTimeField()
     is_manual_attendance_checked = models.BooleanField(blank=True, null=True, default=False)
-    manual_attendance_last_time_edited = models.DateTimeField(auto_now_add=True)
+    manual_attendance_last_time_edited = models.DateTimeField(null=True, blank=True)
 
     @property
     def is_attendance_registrable(self):
+        if not self.manual_attendance_last_time_edited:
+            return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
+
         if self.manual_attendance_last_time_edited < self.attendance_start_datetime or \
             self.manual_attendance_last_time_edited > self.attendance_end_datetime:
             return self.is_manual_attendance_checked
