@@ -40,7 +40,7 @@ class Subject(models.Model):
         CURRENTAFFAIRS = "CA", ("Atualidades")
 
     name = models.CharField(max_length=30, unique=True)
-    main_subject = models.CharField(max_length=2, choices=MainSubjectChoices)
+    main_subject = models.CharField(max_length=2, choices=MainSubjectChoices, default=MainSubjectChoices.PORTUGUESE)
 
     def __str__(self):
         return self.name
