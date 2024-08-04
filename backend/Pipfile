@@ -8,6 +8,7 @@ django = "*"
 djangorestframework = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 pre-commit = "~=2.17"

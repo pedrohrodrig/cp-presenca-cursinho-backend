@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .models import Attendance, Lesson, Student
-from .serializers import AttendanceSerializer, LessonSerializer, StudentSerializer
+from .serializers import AttendanceSerializer, LessonPasskeySerializer, LessonSerializer, StudentSerializer
 
 # Create your views here.
 
@@ -12,6 +12,15 @@ from .serializers import AttendanceSerializer, LessonSerializer, StudentSerializ
 class LessonView(ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+    def update_passkey(self, request, pk):
+        lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
+
+        lesson.passkey = request.passkey
+        lesson.save()
+        lesson_serialized = LessonSerializer(lesson)
+
+        return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
 
 class AttendanceRegistrabilityView(ViewSet):
@@ -21,7 +30,7 @@ class AttendanceRegistrabilityView(ViewSet):
         lesson.is_attendance_registrable = not lesson.is_attendance_registrable
         lesson.save()
 
-        lesson_serialized = LessonSerializer(lesson)
+        lesson_serialized = LessonPasskeySerializer(lesson)
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
@@ -45,7 +54,7 @@ class AttendanceView(ModelViewSet):
         attendance_serialized = AttendanceSerializer(attendance)
 
         return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
-    
+
 
 class StudentView(ModelViewSet):
     queryset = Student.objects.all()
