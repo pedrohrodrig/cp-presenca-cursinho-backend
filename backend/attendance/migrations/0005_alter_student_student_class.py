@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("attendance", "0002_rename_is_attendance_registrable_lesson_is_manual_attendance_checked_and_more"),
+        ("attendance", "0004_rename_is_attendance_registrable_lesson_is_manual_attendance_checked_and_more"),
     ]
 
     operations = [
