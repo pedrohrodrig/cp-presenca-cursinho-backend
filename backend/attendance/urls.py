@@ -15,6 +15,7 @@ urlpatterns = format_suffix_patterns(
             "lesson/<int:pk>/update_attendance_registrability/",
             AttendanceRegistrabilityView.as_view({"patch": "update_attendance_registrability"}),
         ),
+        path("lesson_with_details/", LessonView.as_view({"get": "list_next_lessons_with_details"})),
         path("attendance/", AttendanceView.as_view({"post": "create"})),
         path("student/", StudentView.as_view({"get": "list", "post": "create"})),
         path(
