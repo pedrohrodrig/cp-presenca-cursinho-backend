@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .models import Attendance, Lesson, Student, Subject
-from .serializers import AttendanceSerializer, LessonWithDetailsSerializer, LessonPasskeySerializer, LessonSerializer, StudentSerializer, SubjectSerializer
+from .serializers import AttendanceSerializer, LessonPasskeySerializer, LessonSerializer, LessonWithDetailsSerializer, StudentSerializer, SubjectSerializer
 
 # Create your views here.
 
