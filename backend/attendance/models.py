@@ -4,7 +4,43 @@ from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 class Subject(models.Model):
+    class MainSubjectChoices(models.TextChoices):
+        MATHEMATICS = (
+            "MT",
+            _("Matematica"),
+        )
+        PORTUGUESE = (
+            "PT",
+            _("Portugues"),
+        )
+        PHYSICS = (
+            "PH",
+            _("Fisica"),
+        )
+        CHEMISTRY = (
+            "CH",
+            _("Quimica"),
+        )
+        BIOLOGY = (
+            "BI",
+            _("Biologia"),
+        )
+        HISTORY = (
+            "HI",
+            _("Historia"),
+        )
+        GEOGRAPHY = (
+            "GE",
+            _("Geografia"),
+        )
+        PHILOSOPHY = (
+            "PL",
+            _("Filosofia"),
+        )
+        CURRENTAFFAIRS = "CA", ("Atualidades")
+
     name = models.CharField(max_length=30, unique=True)
+    main_subject = models.CharField(max_length=2, choices=MainSubjectChoices, default=MainSubjectChoices.PORTUGUESE)
 
     def __str__(self):
         return self.name
@@ -42,6 +78,7 @@ class LessonRecurrentDatetime(models.Model):
         # 0 = monday / 6 = sunday
         return self.datetime.weekday()
 
+
 class Lesson(models.Model):
     lesson_recurrency = models.ForeignKey(LessonRecurrency, on_delete=models.CASCADE, related_name="lessons")
     name = models.CharField(max_length=100)
@@ -50,6 +87,7 @@ class Lesson(models.Model):
     attendance_start_datetime = models.DateTimeField()
     attendance_end_datetime = models.DateTimeField()
     is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
+    passkey = models.CharField(max_length=10, null=False, blank=False, default="1234567890")
 
     def __str__(self):
         return f"{self.lesson_recurrency} - {self.start_datetime}"
