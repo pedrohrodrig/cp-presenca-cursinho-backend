@@ -26,7 +26,7 @@ class LessonView(ModelViewSet):
 
         lesson.passkey = request.passkey
         lesson.save()
-        lesson_serialized = LessonSerializer(lesson)
+        lesson_serialized = LessonPasskeySerializer(lesson)
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
@@ -39,7 +39,7 @@ class AttendanceRegistrabilityView(ViewSet):
         lesson.manual_attendance_last_time_edited = timezone.now()
         lesson.save()
 
-        lesson_serialized = LessonPasskeySerializer(lesson)
+        lesson_serialized = LessonSerializer(lesson)
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
