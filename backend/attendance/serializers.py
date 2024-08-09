@@ -16,10 +16,14 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class LessonSerializer(serializers.ModelSerializer):
+    is_attendance_registrable = serializers.SerializerMethodField()
+    
+    def get_is_attendance_registrable(self, obj):
+        return obj.is_attendance_registrable
+    
     class Meta:
         model = Lesson
-        fields = "__all__"
-
+        excludes = ["is_manual_attendance_checked", "manual_attendance_last_time_edited"]
 
 class LessonPasskeySerializer(serializers.ModelSerializer):
     class Meta:
@@ -47,6 +51,7 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
     subject = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
     student_class = serializers.SerializerMethodField()
+    is_attendance_registrable = serializers.SerializerMethodField()
 
     def get_subject(self, obj):
         return obj.lesson_recurrency.subject.name
@@ -56,6 +61,9 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
     
     def get_student_class(self, obj):
         return obj.lesson_recurrency.student_class.name
+    
+    def get_is_attendance_registrable(self, obj):
+        return obj.is_attendance_registrable
 
     class Meta:
         model = Lesson
