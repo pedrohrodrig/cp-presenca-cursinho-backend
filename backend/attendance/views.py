@@ -26,7 +26,7 @@ class LessonView(ModelViewSet):
 
         lesson.passkey = request.passkey
         lesson.save()
-        lesson_serialized = LessonSerializer(lesson)
+        lesson_serialized = LessonPasskeySerializer(lesson)
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
@@ -38,7 +38,7 @@ class AttendanceRegistrabilityView(ViewSet):
         lesson.is_attendance_registrable = not lesson.is_attendance_registrable
         lesson.save()
 
-        lesson_serialized = LessonPasskeySerializer(lesson)
+        lesson_serialized = LessonSerializer(lesson)
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
