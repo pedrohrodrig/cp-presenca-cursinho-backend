@@ -14,6 +14,15 @@ class LessonView(ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 
+    def retrieve(self, request, pk):
+        lesson = Lesson.objects.filter(pk=pk).first()
+        if not lesson:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        lesson_serialized = LessonWithDetailsSerializer(lesson)
+
+        return Response(lesson_serialized.data, status=status.HTTP_200_OK)
+
     def list_next_lessons_with_details(self, request):
         queryset = Lesson.objects.filter(start_datetime__gte=timezone.now())
 

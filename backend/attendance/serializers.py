@@ -23,7 +23,7 @@ class LessonSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Lesson
-        excludes = ["is_manual_attendance_checked", "manual_attendance_last_time_edited"]
+        exclude = ["is_manual_attendance_checked", "manual_attendance_last_time_edited"]
 
 class LessonPasskeySerializer(serializers.ModelSerializer):
     class Meta:
@@ -67,4 +67,4 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ["id", "start_datetime", "end_datetime", "attendance_start_datetime", "attendance_end_datetime", "is_attendance_registrable", "subject", "course", "student_class"]
+        fields = ["id", "name", "passkey", "start_datetime", "end_datetime", "attendance_start_datetime", "attendance_end_datetime", "is_attendance_registrable", "subject", "course", "student_class"]
