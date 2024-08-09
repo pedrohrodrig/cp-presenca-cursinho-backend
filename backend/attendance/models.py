@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 
 # Create your models here.
@@ -58,7 +59,7 @@ class StudentClass(models.Model):
 
 class Student(models.Model):
     full_name = models.CharField(max_length=100, null=False, blank=False)
-    student_class = models.OneToOneField(StudentClass, on_delete=models.CASCADE, related_name="students")
+    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="students")
 
     def __str__(self):
         return self.full_name
@@ -86,8 +87,25 @@ class Lesson(models.Model):
     end_datetime = models.DateTimeField()
     attendance_start_datetime = models.DateTimeField()
     attendance_end_datetime = models.DateTimeField()
-    is_attendance_registrable = models.BooleanField(blank=True, null=True, default=False)
     passkey = models.CharField(max_length=10, null=False, blank=False, default="1234567890")
+    is_manual_attendance_checked = models.BooleanField(blank=True, null=True, default=False)
+    manual_attendance_last_time_edited = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def is_attendance_registrable(self):
+        if not self.manual_attendance_last_time_edited:
+            return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
+
+        if self.manual_attendance_last_time_edited < self.attendance_start_datetime or \
+            self.manual_attendance_last_time_edited > self.attendance_end_datetime:
+            return self.is_manual_attendance_checked
+        
+        manual_change_in_attendance_automated_period = self.attendance_start_datetime <= self.manual_attendance_last_time_edited <= self.attendance_end_datetime
+
+        if manual_change_in_attendance_automated_period and not self.is_manual_attendance_checked:
+            return False
+        
+        return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
 
     def __str__(self):
         return f"{self.lesson_recurrency} - {self.start_datetime}"
@@ -105,4 +123,4 @@ class Attendance(models.Model):
     status = models.CharField(max_length=1, choices=AttendanceChoices, default=AttendanceChoices.ABSENT)
 
     def __str__(self):
-        return f"{self.student} - {self.lesson.lesson_recurrency.subject.name}/{self.lesson_session.time} - {self.status}"
+        return f"{self.student} - {self.lesson.lesson_recurrency.subject.name}/{self.lesson.start_datetime} - {self.status}"

@@ -1,4 +1,4 @@
-from datetime import datetime
+from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
@@ -15,7 +15,7 @@ class LessonView(ModelViewSet):
     serializer_class = LessonSerializer
 
     def list_next_lessons_with_details(self, request):
-        queryset = Lesson.objects.filter(start_datetime__gte=datetime.now())
+        queryset = Lesson.objects.filter(start_datetime__gte=timezone.now())
 
         lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
 
@@ -35,7 +35,8 @@ class AttendanceRegistrabilityView(ViewSet):
     def update_attendance_registrability(self, request, pk):
         lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
 
-        lesson.is_attendance_registrable = not lesson.is_attendance_registrable
+        lesson.is_manual_attendance_checked = not lesson.is_attendance_registrable
+        lesson.manual_attendance_last_time_edited = timezone.now()
         lesson.save()
 
         lesson_serialized = LessonSerializer(lesson)
@@ -52,13 +53,22 @@ class AttendanceView(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        lesson_session = serializer.validated_data["lesson_session"]
+        lesson = serializer.validated_data["lesson"]
+        student = serializer.validated_data["student"]
 
-        if not lesson_session.is_attendance_registrable:
+        if not lesson.is_attendance_registrable:
             # TODO: melhorar codigo de erro para usuario
             return Response("Attendance is not registrable", status=status.HTTP_403_FORBIDDEN)
+        
+        if lesson.lesson_recurrency.student_class != student.student_class:
+            return Response("Student do not belong to class", status=status.HTTP_403_FORBIDDEN)
 
-        attendance = Attendance.objects.create(**serializer.validated_data)
+        attendance, created = Attendance.objects.get_or_create(**serializer.validated_data)
+
+        if not created:
+            # TODO: melhorar codigo de erro para usuario
+            return Response("Attendance already registered", status=status.HTTP_400_BAD_REQUEST)
+
         attendance_serialized = AttendanceSerializer(attendance)
 
         return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
