@@ -2,6 +2,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
+from authentication.models import User
+
 
 # Create your models here.
 class Subject(models.Model):
@@ -57,14 +59,16 @@ class StudentClass(models.Model):
         return f"{self.name} - {self.course}"
 
 
+class Teacher(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="teacher")
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="teachers")
+
+
 class Student(models.Model):
-    full_name = models.CharField(max_length=100, null=False, blank=False)
+    user = models.OneToOneField(User, null=True, on_delete=models.CASCADE, related_name="student")
     student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="students")
 
-    def __str__(self):
-        return self.full_name
-
-
+    
 class LessonRecurrency(models.Model):
     student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="lesson_recurrences")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lesson_recurrences")
