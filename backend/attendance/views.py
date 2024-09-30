@@ -1,11 +1,20 @@
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .models import Attendance, Lesson, Student, StudentClass, Subject
-from .serializers import AttendanceSerializer, LessonPasskeySerializer, LessonSerializer, LessonWithDetailsSerializer, StudentClassSerializer, StudentSerializer, SubjectSerializer
+from .serializers import (
+    AttendanceSerializer,
+    LessonPasskeySerializer,
+    LessonSerializer,
+    LessonWithDetailsSerializer,
+    MobileLessonSerializer,
+    StudentClassSerializer,
+    StudentSerializer,
+    SubjectSerializer,
+)
 
 # Create your views here.
 
@@ -29,7 +38,14 @@ class LessonView(ModelViewSet):
         lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
-    
+
+    def list_mobile_lessons_with_details(self, request):
+        queryset = Lesson.objects.all()
+
+        lessons_list_serialized = MobileLessonSerializer(queryset, many=True)
+
+        return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
+
     def update_passkey(self, request, pk):
         lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
 
@@ -68,7 +84,7 @@ class AttendanceView(ModelViewSet):
         if not lesson.is_attendance_registrable:
             # TODO: melhorar codigo de erro para usuario
             return Response("Attendance is not registrable", status=status.HTTP_403_FORBIDDEN)
-        
+
         if lesson.lesson_recurrency.student_class != student.student_class:
             return Response("Student do not belong to class", status=status.HTTP_403_FORBIDDEN)
 

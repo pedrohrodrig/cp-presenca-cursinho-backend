@@ -1,6 +1,6 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 
 # Create your models here.
@@ -48,10 +48,33 @@ class Subject(models.Model):
 
 
 class StudentClass(models.Model):
+    class CourseChoices(models.TextChoices):
+        EXTENSIVE = (
+            "EX",
+            _("Extensivo"),
+        )
+        SEMI_EXTENSIVE = (
+            "SE",
+            _("Semi-Extensivo"),
+        )
+
+    class ModalityChoices(models.TextChoices):
+        ONLINE = (
+            "ON",
+            _("Remoto"),
+        )
+        IN_PERSON = (
+            "IP",
+            _("Presencial"),
+        )
+
     name = models.CharField(max_length=30, unique=True)
     classroom = models.CharField(max_length=10, blank=True, null=True)
-    course = models.CharField(max_length=100)  # TODO: criar modelo com ChoiceField
+    course = models.CharField(max_length=2, choices=CourseChoices, default=CourseChoices.EXTENSIVE)
     subjects = models.ManyToManyField(Subject, related_name="student_classes")
+    modality = models.CharField(max_length=2, choices=ModalityChoices, default=ModalityChoices.IN_PERSON)
+    start_datetime = models.DateTimeField(default=timezone.now)
+    end_datetime = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"{self.name} - {self.course}"
@@ -96,15 +119,19 @@ class Lesson(models.Model):
         if not self.manual_attendance_last_time_edited:
             return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
 
-        if self.manual_attendance_last_time_edited < self.attendance_start_datetime or \
-            self.manual_attendance_last_time_edited > self.attendance_end_datetime:
+        if (
+            self.manual_attendance_last_time_edited < self.attendance_start_datetime
+            or self.manual_attendance_last_time_edited > self.attendance_end_datetime
+        ):
             return self.is_manual_attendance_checked
-        
-        manual_change_in_attendance_automated_period = self.attendance_start_datetime <= self.manual_attendance_last_time_edited <= self.attendance_end_datetime
+
+        manual_change_in_attendance_automated_period = (
+            self.attendance_start_datetime <= self.manual_attendance_last_time_edited <= self.attendance_end_datetime
+        )
 
         if manual_change_in_attendance_automated_period and not self.is_manual_attendance_checked:
             return False
-        
+
         return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
 
     def __str__(self):
