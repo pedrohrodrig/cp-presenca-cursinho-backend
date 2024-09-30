@@ -15,6 +15,7 @@ from .serializers import (
     LessonRecurrentDatetimeSerializer,
     LessonSerializer,
     LessonWithDetailsSerializer,
+    MobileLessonSerializer,
     StudentClassSerializer,
     StudentSerializer,
     SubjectSerializer,
@@ -74,6 +75,13 @@ class LessonView(ModelViewSet):
         queryset = Lesson.objects.filter(start_datetime__day=now.day).order_by("start_datetime")
 
         lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
+
+        return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
+
+    def list_mobile_lessons_with_details(self, request):
+        queryset = Lesson.objects.all()
+
+        lessons_list_serialized = MobileLessonSerializer(queryset, many=True)
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 

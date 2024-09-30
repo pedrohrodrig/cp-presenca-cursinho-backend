@@ -88,7 +88,6 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
             "student_class",
         ]
 
-
 class LessonRecurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRecurrency
@@ -113,3 +112,35 @@ class LessonRecurrencyWithDatetimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRecurrency
         fields = ["id", "student_class", "subject", "lesson_datetimes"]
+class MobileLessonSerializer(serializers.ModelSerializer):
+    subject = serializers.SerializerMethodField()
+    course = serializers.SerializerMethodField()
+    student_class = serializers.SerializerMethodField()
+    is_attendance_registrable = serializers.SerializerMethodField()
+
+    def get_subject(self, obj):
+        return obj.lesson_recurrency.subject.name
+
+    def get_course(self, obj):
+        return obj.lesson_recurrency.student_class.course
+
+    def get_student_class(self, obj):
+        return obj.lesson_recurrency.student_class.name
+
+    def get_is_attendance_registrable(self, obj):
+        return obj.is_attendance_registrable
+
+    class Meta:
+        model = Lesson
+        fields = [
+            "id",
+            "name",
+            "start_datetime",
+            "end_datetime",
+            "attendance_start_datetime",
+            "attendance_end_datetime",
+            "is_attendance_registrable",
+            "subject",
+            "course",
+            "student_class",
+        ]

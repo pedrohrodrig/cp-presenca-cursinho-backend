@@ -68,6 +68,9 @@ class StudentClass(models.Model):
     course = models.CharField(max_length=100)
     modality = models.CharField(max_length=2, choices=ModalityChoices, default=ModalityChoices.INCLASS)
     subjects = models.ManyToManyField(Subject, related_name="student_classes")
+    modality = models.CharField(max_length=2, choices=ModalityChoices, default=ModalityChoices.IN_PERSON)
+    start_datetime = models.DateTimeField(default=timezone.now)
+    end_datetime = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"{self.name} - {self.course}"
