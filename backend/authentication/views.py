@@ -12,31 +12,37 @@ from .serializers import (
 )
 from .validators import (
     duplicated_email_validation,
-    password_confirmation_validation
 )
+from .utils import send_password_in_email
 
 class UserView(viewsets.ModelViewSet):
     queryset = User.objects.all()
 
     def register(self, request):
-        serializer = UserSerializer(data=request.data)
+        user_data = {
+            'email': request.data.get('email'),
+            'first_name': request.data.get('first_name'),
+            'last_name': request.data.get('last_name'),
+            'password': make_password(secrets.token_urlsafe(8)),
+            'role': Roles.convert_to_int_if_string(request.data.get('role'))
+        }
+
+        serializer = UserSerializer(data=user_data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         user_data = serializer.validated_data
-        user_data['password_confirmation'] = request.data['password_confirmation']
 
         # TODO: alterar função para retornar erro ao invés de lançar exceção
         duplicated_email_validation(user_data["email"])
-        password_confirmation_validation(user_data["password"], user_data["password_confirmation"])
-
-        user_data.pop("password_confirmation")
 
         user = User.objects.create_user(**user_data)
         user.set_password(user_data["password"])
         user.save()
 
         user_serialized = UserSerializer(user)
+
+        send_password_in_email(user_data["email"], user_data["password"])
 
         return Response(user_serialized.data, status=status.HTTP_201_CREATED)
 
@@ -79,6 +85,10 @@ class RegisterMultipleView(viewsets.ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
+        successful_count = 0
+        failed_count = 0
+        errors = []
+
         for index, row in df.iterrows():
             user_data = {
                 'email': row['email'],
@@ -90,16 +100,26 @@ class RegisterMultipleView(viewsets.ModelViewSet):
             serializer = UserSerializer(data=user_data)
 
             if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                failed_count += 1
+                errors.append({"line": index + 1, "error": serializer.errors})
+                continue
 
-            # TODO: alterar função para retornar erro ao invés de lançar exceção
-            duplicated_email_validation(user_data["email"])
+            try:
+                duplicated_email_validation(user_data["email"])
+                user = User.objects.create_user(**user_data)
+                user.set_password(user_data["password"])
+                user.save()
 
-            # TODO: verificar se o set_password já não é chamado pelo create_user
-            user = User.objects.create_user(**user_data)
-            user.set_password(user_data["password"])
-            user.save()
+                send_password_in_email(user_data["email"], user_data["password"])
 
-            # TODO: enviar senha por e-mail para o usuário
+                successful_count += 1
+            except Exception as e:
+                failed_count += 1
+                errors.append({"line": index + 1, "error": str(e)})
 
-        return Response({"message": "Users created successfully"}, status=status.HTTP_201_CREATED)
+        return Response({
+            "successful_count": successful_count,
+            "failed_count": failed_count,
+            "errors": errors,
+            "total_lines": len(df)
+        }, status=status.HTTP_200_OK)
