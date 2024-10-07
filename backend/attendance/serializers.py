@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Attendance, Lesson, LessonRecurrency, Student, StudentClass, Subject
+from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 
 
 class StudentClassSerializer(serializers.ModelSerializer):
@@ -87,3 +87,23 @@ class LessonRecurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRecurrency
         fields = "__all__"
+
+
+class LessonRecurrentDatetimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonRecurrentDatetime
+        fields = "__all__"
+
+
+class LessonRecurrencyWithDatetimeSerializer(serializers.ModelSerializer):
+    lesson_datetimes = serializers.SerializerMethodField()
+
+    def get_lesson_datetimes(self, obj):
+        datetimes = LessonRecurrentDatetime.objects.filter(lesson_recurrency=obj.id)
+        datetimes_serialized = LessonRecurrentDatetimeSerializer(datetimes, many=True)
+
+        return datetimes_serialized.data
+
+    class Meta:
+        model = LessonRecurrency
+        fields = ["id", "student_class", "subject", "lesson_datetimes"]
