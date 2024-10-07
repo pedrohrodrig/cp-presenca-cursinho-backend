@@ -1,7 +1,16 @@
 from django.urls import include, path
 from rest_framework.urlpatterns import format_suffix_patterns
 
-from .views import AttendanceRegistrabilityView, AttendanceView, LessonView, StudentClassView, StudentView, SubjectView
+from .views import (
+    AttendanceRegistrabilityView,
+    AttendanceView,
+    LessonRecurrencyView,
+    LessonRecurrentDatetimeView,
+    LessonView,
+    StudentClassView,
+    StudentView,
+    SubjectView,
+)
 
 urlpatterns = format_suffix_patterns(
     [
@@ -30,6 +39,30 @@ urlpatterns = format_suffix_patterns(
         path(
             "subject/<str:main_subject>/",
             SubjectView.as_view({"get": "list_from_main_subject"}),
+        ),
+        path(
+            "lesson_recurrency/",
+            LessonRecurrencyView.as_view({"get": "list_recurrency_with_datetime", "post": "create"}),
+        ),
+        path(
+            "lesson_recurrency/<int:pk>/",
+            LessonRecurrencyView.as_view(
+                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+            ),
+        ),
+        path(
+            "lesson_recurrency/<int:subject>/<int:student_class>/",
+            LessonRecurrencyView.as_view({"get": "list_recurrency_with_params"}),
+        ),
+        path(
+            "lesson_recurrent_datetime/",
+            LessonRecurrentDatetimeView.as_view({"get": "list", "post": "create_datetime_with_lessons"}),
+        ),
+        path(
+            "lesson_recurrent_datetime/<int:pk>/",
+            LessonRecurrentDatetimeView.as_view(
+                {"get": "retrieve", "put": "update", "patch": "update_datetime_with_lessons", "delete": "destroy"}
+            ),
         ),
         path("student_class/", StudentClassView.as_view({"get": "list", "post": "create"})),
     ]

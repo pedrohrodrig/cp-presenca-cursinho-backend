@@ -1,14 +1,18 @@
+from datetime import datetime, timedelta
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .models import Attendance, Lesson, LessonRecurrency, Student, StudentClass, Subject
+from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
     LessonPasskeySerializer,
     LessonRecurrencySerializer,
+    LessonRecurrencyWithDatetimeSerializer,
+    LessonRecurrentDatetimeSerializer,
     LessonSerializer,
     LessonWithDetailsSerializer,
     StudentClassSerializer,
@@ -22,6 +26,33 @@ from .serializers import (
 class LessonView(ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
+
+    def create_from_recurrency(self, recurrent_datetime):
+        current_date = recurrent_datetime.start_datetime - timedelta(hours=3)
+        current_weekday = current_date.date().weekday()
+        days = ((recurrent_datetime.day_of_week - current_weekday) + 7) % 7
+        start_datetime = recurrent_datetime.start_datetime + timedelta(days=days)
+        end_datetime = recurrent_datetime.end_datetime + timedelta(days=days)
+
+        lesson_data = {
+            "lesson_recurrency": recurrent_datetime.lesson_recurrency.id,
+            "lesson_recurrent_datetime": recurrent_datetime.id,
+            "name": f"Aula de {recurrent_datetime.lesson_recurrency.subject}",
+            "start_datetime": start_datetime,
+            "end_datetime": end_datetime,
+            "attendance_start_datetime": start_datetime,
+            "attendance_end_datetime": end_datetime,
+        }
+
+        serializer = LessonSerializer(data=lesson_data)
+
+        if not serializer.is_valid():
+            raise serializers.ValidationError({"message": "Invalid data for lesson"})
+
+        lesson = Lesson.objects.create(**serializer.validated_data)
+        lesson_serialized = LessonRecurrentDatetimeSerializer(lesson)
+
+        return lesson_serialized.data
 
     def retrieve(self, request, pk):
         lesson = Lesson.objects.filter(pk=pk).first()
@@ -135,6 +166,70 @@ class SubjectView(ModelViewSet):
 
         subjects_serialized = SubjectSerializer(subjects, many=True)
         return Response(subjects_serialized.data, status=status.HTTP_200_OK)
+
+
+class LessonRecurrencyView(ModelViewSet):
+    queryset = LessonRecurrency.objects.all()
+    serializer_class = LessonRecurrencySerializer
+
+    def list_recurrency_with_datetime(self, request):
+        queryset = LessonRecurrency.objects.all()
+        recurrency_list_serialized = LessonRecurrencyWithDatetimeSerializer(queryset, many=True)
+
+        return Response(recurrency_list_serialized.data, status=status.HTTP_200_OK)
+
+    def list_recurrency_with_params(self, request, subject, student_class):
+        recurrency = LessonRecurrency.objects.filter(subject=subject, student_class=student_class).first()
+
+        if not recurrency:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        recurrency_serialized = LessonRecurrencyWithDatetimeSerializer(recurrency)
+        return Response(recurrency_serialized.data, status=status.HTTP_200_OK)
+
+
+class LessonRecurrentDatetimeView(ModelViewSet):
+    queryset = LessonRecurrentDatetime.objects.all()
+    serializer_class = LessonRecurrentDatetimeSerializer
+
+    def create_datetime_with_lessons(self, request):
+        serializer = LessonRecurrentDatetimeSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        recurrent_datetime = LessonRecurrentDatetime.objects.create(**serializer.validated_data)
+        recurrent_datetime_serialized = LessonRecurrentDatetimeSerializer(recurrent_datetime)
+
+        try:
+            LessonView.create_from_recurrency(self, recurrent_datetime)
+        except serializers.ValidationError as e:
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(recurrent_datetime_serialized.data, status=status.HTTP_201_CREATED)
+
+    def update_datetime_with_lessons(self, request, pk):
+        recurrent_datetime = LessonRecurrentDatetime.objects.get(pk=pk)
+        # lessons = Lesson.objects.filter(lesson_recurrent_datetime=recurrent_datetime.id, start_datetime__gte=timezone.now())
+        lessons = Lesson.objects.filter(lesson_recurrent_datetime=recurrent_datetime.id)
+        lessons.delete()
+
+        recurrent_datetime.start_datetime = datetime.fromisoformat(
+            request.data.get("start_datetime", recurrent_datetime.start_datetime)[:-1] + "+00:00"
+        )
+        recurrent_datetime.end_datetime = datetime.fromisoformat(
+            request.data.get("end_datetime", recurrent_datetime.start_datetime)[:-1] + "+00:00"
+        )
+        recurrent_datetime.day_of_week = int(request.data.get("day_of_week", recurrent_datetime.day_of_week))
+        recurrent_datetime.save()
+
+        try:
+            LessonView.create_from_recurrency(self, recurrent_datetime)
+        except serializers.ValidationError as e:
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = LessonRecurrentDatetimeSerializer(recurrent_datetime)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class StudentClassView(ModelViewSet):
