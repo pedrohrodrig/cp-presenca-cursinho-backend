@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -32,9 +34,15 @@ class LessonView(ModelViewSet):
 
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
-    def list_next_lessons_with_details(self, request):
-        # queryset = Lesson.objects.filter(start_datetime__gte=timezone.now())
+    def list_lessons_with_details(self, request):
         queryset = Lesson.objects.all()
+        lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
+
+        return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
+
+    def list_today_lessons_with_details(self, request):
+        now = timezone.now()
+        queryset = Lesson.objects.filter(start_datetime__day=now.day).order_by("start_datetime")
 
         lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
 
