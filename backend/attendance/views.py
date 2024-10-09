@@ -138,5 +138,5 @@ class SubjectView(ModelViewSet):
 
 
 class StudentClassView(ModelViewSet):
-    queryset = StudentClass.objects.all()
+    queryset = StudentClass.objects.all().order_by("name")
     serializer_class = StudentClassSerializer
