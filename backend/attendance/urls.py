@@ -32,5 +32,11 @@ urlpatterns = format_suffix_patterns(
             SubjectView.as_view({"get": "list_from_main_subject"}),
         ),
         path("student_class/", StudentClassView.as_view({"get": "list", "post": "create"})),
+        path(
+            "student_class/<int:pk>/",
+            StudentClassView.as_view(
+                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+            ),
+        ),
     ]
 )
