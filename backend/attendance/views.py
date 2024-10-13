@@ -28,7 +28,7 @@ class LessonView(ModelViewSet):
     serializer_class = LessonSerializer
 
     def create_from_recurrency(self, recurrent_datetime):
-        current_date = recurrent_datetime.start_datetime - timedelta(hours=3)
+        current_date = recurrent_datetime.start_datetime
         current_weekday = current_date.date().weekday()
         days = ((recurrent_datetime.day_of_week - current_weekday) + 7) % 7
         start_datetime = recurrent_datetime.start_datetime + timedelta(days=days)
