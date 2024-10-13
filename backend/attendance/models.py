@@ -7,6 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from authentication.models import User
 
+
 # Create your models here.
 class Subject(models.Model):
     class MainSubjectChoices(models.TextChoices):
@@ -81,7 +82,7 @@ class Student(models.Model):
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE, related_name="student")
     student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="students")
 
-    
+
 class LessonRecurrency(models.Model):
     student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="lesson_recurrences")
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name="lesson_recurrences")
