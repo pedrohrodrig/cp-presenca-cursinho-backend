@@ -88,6 +88,7 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
             "student_class",
         ]
 
+
 class LessonRecurrencySerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRecurrency
@@ -112,6 +113,8 @@ class LessonRecurrencyWithDatetimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonRecurrency
         fields = ["id", "student_class", "subject", "lesson_datetimes"]
+
+
 class MobileLessonSerializer(serializers.ModelSerializer):
     subject = serializers.SerializerMethodField()
     course = serializers.SerializerMethodField()
