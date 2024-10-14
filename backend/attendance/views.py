@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from django.shortcuts import get_object_or_404
+from django.test import RequestFactory
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -15,6 +16,7 @@ from .serializers import (
     LessonRecurrentDatetimeSerializer,
     LessonSerializer,
     LessonWithDetailsSerializer,
+    MobileLessonSerializer,
     StudentClassSerializer,
     StudentSerializer,
     SubjectSerializer,
@@ -77,6 +79,13 @@ class LessonView(ModelViewSet):
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
+    def list_mobile_lessons_with_details(self, request):
+        queryset = Lesson.objects.all()
+
+        lessons_list_serialized = MobileLessonSerializer(queryset, many=True)
+
+        return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
+
     def update_passkey(self, request, pk):
         lesson = get_object_or_404(Lesson.objects.all(), pk=pk)
 
@@ -118,6 +127,40 @@ class AttendanceView(ModelViewSet):
 
         if lesson.lesson_recurrency.student_class != student.student_class:
             return Response("Student do not belong to class", status=status.HTTP_403_FORBIDDEN)
+
+        attendance, created = Attendance.objects.get_or_create(**serializer.validated_data)
+
+        if not created:
+            # TODO: melhorar codigo de erro para usuario
+            return Response("Attendance already registered", status=status.HTTP_400_BAD_REQUEST)
+
+        attendance_serialized = AttendanceSerializer(attendance)
+
+        return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
+
+    def checkPassKey(self, request):
+        lesson_id = request.data.get("lesson_id")
+        student_id = request.data.get("student_id")
+        passkey = request.data.get("passkey")
+
+        if not lesson_id or not passkey:
+            return Response("Lesson ID and passkey are required", status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            lesson = Lesson.objects.get(id=lesson_id)
+        except Lesson.DoesNotExist:
+            return Response("Lesson not found", status=status.HTTP_404_NOT_FOUND)
+
+        if lesson.passkey != passkey:
+            return Response("Invalid passkey", status=status.HTTP_403_FORBIDDEN)
+
+        new_data = {"lesson": lesson_id, "student": student_id, "status": "P"}  # Define status como "P" (Present)
+
+        serializer = AttendanceSerializer(data=new_data)
+
+        if not serializer.is_valid():
+            print(serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         attendance, created = Attendance.objects.get_or_create(**serializer.validated_data)
 

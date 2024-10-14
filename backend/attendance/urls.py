@@ -25,7 +25,9 @@ urlpatterns = format_suffix_patterns(
             AttendanceRegistrabilityView.as_view({"patch": "update_attendance_registrability"}),
         ),
         path("lesson_with_details/", LessonView.as_view({"get": "list_today_lessons_with_details"})),
+        path("mobile_lesson_with_details/", LessonView.as_view({"get": "list_mobile_lessons_with_details"})),
         path("attendance/", AttendanceView.as_view({"post": "create"})),
+        path("attendance/check-passkey", AttendanceView.as_view({"post": "checkPassKey"})),
         path("student/", StudentView.as_view({"get": "list", "post": "create"})),
         path(
             "student/<int:pk>/",
@@ -33,8 +35,15 @@ urlpatterns = format_suffix_patterns(
         ),
         path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
         path(
-            "subject/<int:pk>/",
+            "subject/<int:pk>",
             SubjectView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
+        ),
+        path("student-class/", StudentClassView.as_view({"get": "list", "post": "create"})),
+        path(
+            "student-class/<int:pk>",
+            StudentClassView.as_view(
+                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+            ),
         ),
         path(
             "subject/<str:main_subject>/",
