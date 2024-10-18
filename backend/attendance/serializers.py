@@ -147,3 +147,12 @@ class MobileLessonSerializer(serializers.ModelSerializer):
             "course",
             "student_class",
         ]
+
+
+class SubjectsWithDetailsSerializer(serializers.ModelSerializer):
+    subject = SubjectSerializer()
+    regular_datetimes = LessonRecurrentDatetimeSerializer(many=True)
+
+    class Meta:
+        model = LessonRecurrency
+        fields = ["subject", "regular_datetimes"]
