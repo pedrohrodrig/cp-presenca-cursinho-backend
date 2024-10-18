@@ -20,6 +20,7 @@ from .serializers import (
     StudentClassSerializer,
     StudentSerializer,
     SubjectSerializer,
+    SubjectsWithDetailsSerializer,
 )
 
 # Create your views here.
@@ -215,6 +216,16 @@ class SubjectView(ModelViewSet):
 
         subjects_serialized = SubjectSerializer(subjects, many=True)
         return Response(subjects_serialized.data, status=status.HTTP_200_OK)
+
+    def list_subject_with_details(self, request):
+        lesson_recurrences = LessonRecurrency.objects.all()
+
+        if not lesson_recurrences:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SubjectsWithDetailsSerializer(lesson_recurrences, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LessonRecurrencyView(ModelViewSet):
