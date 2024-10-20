@@ -60,6 +60,22 @@ class LessonView(ModelViewSet):
 
         return lesson_serialized.data
 
+    def create_lesson_with_deatils(self, request):
+        recurrency = LessonRecurrency.objects.get(
+            subject__name=request.data["subject"], student_class__name=request.data["student_class"]
+        )
+        lesson_data = {**request.data, "lesson_recurrency": recurrency.id}
+
+        serializer = LessonSerializer(data=lesson_data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        lesson = Lesson.objects.create(**serializer.validated_data)
+        lesson_serialized = LessonSerializer(lesson)
+
+        return Response(lesson_serialized.data, status=status.HTTP_201_CREATED)
+
     def retrieve(self, request, pk):
         lesson = Lesson.objects.filter(pk=pk).first()
         if not lesson:
