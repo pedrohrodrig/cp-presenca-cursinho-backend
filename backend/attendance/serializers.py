@@ -42,6 +42,22 @@ class AttendanceSerializer(serializers.ModelSerializer):
         ]
 
 
+class AttendanceSerializerMobile(serializers.ModelSerializer):
+    subject = serializers.SerializerMethodField()
+
+    def get_subject(self, obj):
+        return obj.lesson.lesson_recurrency.subject.main_subject
+
+    class Meta:
+        model = Attendance
+        fields = [
+            "status",
+            "student",
+            "subject",
+            "lesson",
+        ]
+
+
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
