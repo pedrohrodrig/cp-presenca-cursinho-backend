@@ -3,10 +3,12 @@ from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from django.test import RequestFactory
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
+from .filters import LessonFilter
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -26,8 +28,10 @@ from .serializers import (
 
 
 class LessonView(ModelViewSet):
-    queryset = Lesson.objects.all()
+    queryset = Lesson.objects.all().order_by("start_datetime")
     serializer_class = LessonSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = LessonFilter
 
     def create_from_recurrency(self, recurrent_datetime):
         current_date = recurrent_datetime.start_datetime
@@ -66,14 +70,15 @@ class LessonView(ModelViewSet):
         return Response(lesson_serialized.data, status=status.HTTP_200_OK)
 
     def list_lessons_with_details(self, request):
-        queryset = Lesson.objects.all()
+        queryset = self.filter_queryset(self.get_queryset())
         lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
     def list_today_lessons_with_details(self, request):
-        now = timezone.now()
-        queryset = Lesson.objects.filter(start_datetime__day=now.day).order_by("start_datetime")
+        now = timezone.localtime(timezone.now())
+        queryset = self.get_queryset().filter(start_datetime__day=now.day)
+        queryset = self.filter_queryset(queryset)
 
         lessons_list_serialized = LessonWithDetailsSerializer(queryset, many=True)
 
