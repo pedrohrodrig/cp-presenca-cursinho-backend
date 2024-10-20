@@ -14,7 +14,7 @@ from .views import (
 
 urlpatterns = format_suffix_patterns(
     [
-        path("lesson/", LessonView.as_view({"get": "list", "post": "create"})),
+        path("lesson/", LessonView.as_view({"get": "list", "post": "create_lesson_with_deatils"})),
         path(
             "lesson/<int:pk>/",
             LessonView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),

@@ -107,14 +107,15 @@ class Lesson(models.Model):
     end_datetime = models.DateTimeField()
     attendance_start_datetime = models.DateTimeField()
     attendance_end_datetime = models.DateTimeField()
-    passkey = models.CharField(max_length=10, null=False, blank=False, default="1234567890")
+    passkey = models.CharField(max_length=10, null=False, blank=False, default="CURSINHO")
     is_manual_attendance_checked = models.BooleanField(blank=True, null=True, default=False)
     manual_attendance_last_time_edited = models.DateTimeField(null=True, blank=True)
 
     @property
     def is_attendance_registrable(self):
+        now = timezone.localtime(timezone.now())
         if not self.manual_attendance_last_time_edited:
-            return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
+            return self.attendance_start_datetime <= now <= self.attendance_end_datetime
 
         if (
             self.manual_attendance_last_time_edited < self.attendance_start_datetime
@@ -129,7 +130,23 @@ class Lesson(models.Model):
         if manual_change_in_attendance_automated_period and not self.is_manual_attendance_checked:
             return False
 
-        return self.attendance_start_datetime <= timezone.now() <= self.attendance_end_datetime
+        return self.attendance_start_datetime <= now <= self.attendance_end_datetime
+
+    @property
+    def status(self):
+        now = timezone.localtime(timezone.now())
+
+        if self.start_datetime > now:
+            return "NOT STARTED"
+
+        elif self.start_datetime <= now and self.end_datetime > now:
+            return "STARTED"
+
+        elif self.end_datetime <= now:
+            return "ENDED"
+
+        else:
+            return "UNKNOWN"
 
     def __str__(self):
         return f"{self.lesson_recurrency} - {self.start_datetime}"

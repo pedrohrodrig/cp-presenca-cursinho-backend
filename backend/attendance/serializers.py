@@ -59,6 +59,7 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
     student_class = serializers.SerializerMethodField()
     is_attendance_registrable = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     def get_subject(self, obj):
         return obj.lesson_recurrency.subject.name
@@ -71,6 +72,9 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
 
     def get_is_attendance_registrable(self, obj):
         return obj.is_attendance_registrable
+
+    def get_status(self, obj):
+        return obj.status
 
     class Meta:
         model = Lesson
@@ -86,6 +90,7 @@ class LessonWithDetailsSerializer(serializers.ModelSerializer):
             "subject",
             "course",
             "student_class",
+            "status",
         ]
 
 
