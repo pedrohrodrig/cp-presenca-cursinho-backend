@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("attendance", "0010_merge_20241014_1101"),
+        ("attendance", "0008_remove_lessonrecurrentdatetime_datetime_and_more"),
     ]
 
     operations = [
