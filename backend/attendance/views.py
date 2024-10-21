@@ -40,25 +40,27 @@ class LessonView(ModelViewSet):
         start_datetime = recurrent_datetime.start_datetime + timedelta(days=days)
         end_datetime = recurrent_datetime.end_datetime + timedelta(days=days)
 
-        lesson_data = {
-            "lesson_recurrency": recurrent_datetime.lesson_recurrency.id,
-            "lesson_recurrent_datetime": recurrent_datetime.id,
-            "name": f"Aula de {recurrent_datetime.lesson_recurrency.subject}",
-            "start_datetime": start_datetime,
-            "end_datetime": end_datetime,
-            "attendance_start_datetime": start_datetime,
-            "attendance_end_datetime": end_datetime,
-        }
+        lessons_to_create = []
 
-        serializer = LessonSerializer(data=lesson_data)
+        for i in range(10):
+            lesson_data = {
+                "lesson_recurrency": recurrent_datetime.lesson_recurrency,
+                "lesson_recurrent_datetime": recurrent_datetime,
+                "name": f"Aula de {recurrent_datetime.lesson_recurrency.subject}",
+                "start_datetime": start_datetime,
+                "end_datetime": end_datetime,
+                "attendance_start_datetime": start_datetime,
+                "attendance_end_datetime": end_datetime,
+            }
 
-        if not serializer.is_valid():
-            raise serializers.ValidationError({"message": "Invalid data for lesson"})
+            lessons_to_create.append(Lesson(**lesson_data))
+            start_datetime += timedelta(days=7)
+            end_datetime += timedelta(days=7)
 
-        lesson = Lesson.objects.create(**serializer.validated_data)
-        lesson_serialized = LessonRecurrentDatetimeSerializer(lesson)
+        Lesson.objects.bulk_create(lessons_to_create)
+        lessons_serialized = LessonSerializer(lessons_to_create, many=True)
 
-        return lesson_serialized.data
+        return lessons_serialized.data
 
     def create_lesson_with_deatils(self, request):
         recurrency = LessonRecurrency.objects.get(
