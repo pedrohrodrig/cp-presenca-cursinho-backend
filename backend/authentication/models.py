@@ -1,6 +1,13 @@
+import os
 from django.db import models
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.base_user import AbstractBaseUser
+
+from django_rest_passwordreset.signals import reset_password_token_created
+from django.dispatch import receiver
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from django.utils.html import strip_tags
 
 from .managers import UserManager
 
@@ -44,3 +51,29 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     def get_short_name(self):
         return self.first_name
+
+@receiver(reset_password_token_created)
+def password_reset_token_created(reset_password_token, register=False, *args, **kwargs):
+    sitelink = "http://localhost:5173/"
+    token = "{}".format(reset_password_token.key)
+    full_link = str(sitelink) + str("auth/password-reset/") + str(token)
+
+    context = {
+        'full_link': full_link,
+    }
+
+    subject = "Solicitação de redefinição de senha" if not register else "Boas vindas ao Sistema de Presença do CP!"
+    html_template = 'reset-password-email.html' if not register else 'set-password-email.html'
+
+    html_message = render_to_string(html_template, context=context)
+    plain_message = strip_tags(html_message)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=plain_message,
+        from_email=os.getenv("EMAIL_HOST_USER"),
+        to=[reset_password_token.user.email],
+    )
+
+    msg.attach_alternative(html_message, "text/html")
+    msg.send()

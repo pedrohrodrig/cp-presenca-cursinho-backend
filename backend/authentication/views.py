@@ -4,6 +4,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import pandas as pd
 import secrets
 from django.contrib.auth.hashers import make_password
+from django_rest_passwordreset.models import ResetPasswordToken
+from django_rest_passwordreset.signals import reset_password_token_created
 
 from .models import Roles, User
 from .serializers import (
@@ -13,7 +15,6 @@ from .serializers import (
 from .validators import (
     duplicated_email_validation,
 )
-from .utils import send_password_in_email
 
 class UserView(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -42,12 +43,13 @@ class UserView(viewsets.ModelViewSet):
 
         user_serialized = UserSerializer(user)
 
-        send_password_in_email(user_data["email"], user_data["password"])
+        reset_password_token = ResetPasswordToken.objects.create(user=user)
+        reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
 
         return Response(user_serialized.data, status=status.HTTP_201_CREATED)
 
     def retrieve_self(self, request):
-        user = User.objects.filter(id=request.user.id)
+        user = User.objects.filter(id=request.user.id).first()
         if not user:
             return Response(status=status.HTTP_404_NOT_FOUND)
         
@@ -110,7 +112,8 @@ class RegisterMultipleView(viewsets.ModelViewSet):
                 user.set_password(user_data["password"])
                 user.save()
 
-                send_password_in_email(user_data["email"], user_data["password"])
+                reset_password_token = ResetPasswordToken.objects.create(user=user)
+                reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
 
                 successful_count += 1
             except Exception as e:
