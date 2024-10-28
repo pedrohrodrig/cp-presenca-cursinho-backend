@@ -104,10 +104,10 @@ class LessonView(ModelViewSet):
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
-    def list_mobile_lessons_with_details(self, request):
-        queryset = Lesson.objects.all()
+    def list_mobile_lessons_with_details(self, request, student_class_id):
+        lessons = Lesson.objects.filter(lesson_recurrency__student_class_id=student_class_id)
 
-        lessons_list_serialized = MobileLessonSerializer(queryset, many=True)
+        lessons_list_serialized = MobileLessonSerializer(lessons, many=True)
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
@@ -210,6 +210,15 @@ class AttendanceView(ModelViewSet):
 class StudentView(ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+
+    def get_student(self, request, user_id):
+        student = Student.objects.filter(user=user_id).first()
+        if not student:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        student_serialized = StudentSerializer(student)
+
+        return Response(student_serialized.data, status=status.HTTP_200_OK)
 
 
 class SubjectView(ModelViewSet):
