@@ -42,6 +42,22 @@ class AttendanceSerializer(serializers.ModelSerializer):
         ]
 
 
+class AttendanceSerializerMobile(serializers.ModelSerializer):
+    subject = serializers.SerializerMethodField()
+
+    def get_subject(self, obj):
+        return obj.lesson.lesson_recurrency.subject.main_subject
+
+    class Meta:
+        model = Attendance
+        fields = [
+            "status",
+            "student",
+            "subject",
+            "lesson",
+        ]
+
+
 class StudentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Student
@@ -152,3 +168,12 @@ class MobileLessonSerializer(serializers.ModelSerializer):
             "course",
             "student_class",
         ]
+
+
+class SubjectsWithDetailsSerializer(serializers.ModelSerializer):
+    subject = SubjectSerializer()
+    regular_datetimes = LessonRecurrentDatetimeSerializer(many=True)
+
+    class Meta:
+        model = LessonRecurrency
+        fields = ["subject", "regular_datetimes"]

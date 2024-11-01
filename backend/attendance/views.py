@@ -12,6 +12,7 @@ from .filters import LessonFilter
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
+    AttendanceSerializerMobile,
     LessonPasskeySerializer,
     LessonRecurrencySerializer,
     LessonRecurrencyWithDatetimeSerializer,
@@ -22,6 +23,7 @@ from .serializers import (
     StudentClassSerializer,
     StudentSerializer,
     SubjectSerializer,
+    SubjectsWithDetailsSerializer,
 )
 
 # Create your views here.
@@ -159,7 +161,16 @@ class AttendanceView(ModelViewSet):
 
         return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
 
-    def checkPassKey(self, request):
+    def list_student_attendance(self, request, student_id):
+        attendances = Attendance.objects.filter(student=student_id)
+
+        if not attendances:
+            return Response("Attendances not found", status=status.HTTP_404_NOT_FOUND)
+
+        attendances_serialized = AttendanceSerializerMobile(attendances, many=True)
+        return Response(attendances_serialized.data, status=status.HTTP_200_OK)
+
+    def check_pass_key(self, request):
         lesson_id = request.data.get("lesson_id")
         student_id = request.data.get("student_id")
         passkey = request.data.get("passkey")
@@ -236,6 +247,16 @@ class SubjectView(ModelViewSet):
 
         subjects_serialized = SubjectSerializer(subjects, many=True)
         return Response(subjects_serialized.data, status=status.HTTP_200_OK)
+
+    def list_subject_with_details(self, request):
+        lesson_recurrences = LessonRecurrency.objects.all()
+
+        if not lesson_recurrences:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SubjectsWithDetailsSerializer(lesson_recurrences, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LessonRecurrencyView(ModelViewSet):
