@@ -37,19 +37,19 @@ urlpatterns = format_suffix_patterns(
         path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
         path("subject_with_details/", SubjectView.as_view({"get": "list_subject_with_details"})),
         path(
-            "subject/<int:pk>",
+            "subject/<int:pk>/",
             SubjectView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
-        ),
-        path("student-class/", StudentClassView.as_view({"get": "list", "post": "create"})),
-        path(
-            "student-class/<int:pk>",
-            StudentClassView.as_view(
-                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
-            ),
         ),
         path(
             "subject/<str:main_subject>/",
             SubjectView.as_view({"get": "list_from_main_subject"}),
+        ),
+        path("student-class/", StudentClassView.as_view({"get": "list", "post": "create"})),
+        path(
+            "student-class/<int:pk>/",
+            StudentClassView.as_view(
+                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+            ),
         ),
         path(
             "lesson_recurrency/",
