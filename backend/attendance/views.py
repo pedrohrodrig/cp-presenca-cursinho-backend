@@ -12,6 +12,7 @@ from .filters import LessonFilter
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
+    AttendanceSerializerMobile,
     LessonPasskeySerializer,
     LessonRecurrencySerializer,
     LessonRecurrencyWithDatetimeSerializer,
@@ -22,6 +23,7 @@ from .serializers import (
     StudentClassSerializer,
     StudentSerializer,
     SubjectSerializer,
+    SubjectsWithDetailsSerializer,
 )
 
 # Create your views here.
@@ -40,25 +42,27 @@ class LessonView(ModelViewSet):
         start_datetime = recurrent_datetime.start_datetime + timedelta(days=days)
         end_datetime = recurrent_datetime.end_datetime + timedelta(days=days)
 
-        lesson_data = {
-            "lesson_recurrency": recurrent_datetime.lesson_recurrency.id,
-            "lesson_recurrent_datetime": recurrent_datetime.id,
-            "name": f"Aula de {recurrent_datetime.lesson_recurrency.subject}",
-            "start_datetime": start_datetime,
-            "end_datetime": end_datetime,
-            "attendance_start_datetime": start_datetime,
-            "attendance_end_datetime": end_datetime,
-        }
+        lessons_to_create = []
 
-        serializer = LessonSerializer(data=lesson_data)
+        for i in range(10):
+            lesson_data = {
+                "lesson_recurrency": recurrent_datetime.lesson_recurrency,
+                "lesson_recurrent_datetime": recurrent_datetime,
+                "name": f"Aula de {recurrent_datetime.lesson_recurrency.subject}",
+                "start_datetime": start_datetime,
+                "end_datetime": end_datetime,
+                "attendance_start_datetime": start_datetime,
+                "attendance_end_datetime": end_datetime,
+            }
 
-        if not serializer.is_valid():
-            raise serializers.ValidationError({"message": "Invalid data for lesson"})
+            lessons_to_create.append(Lesson(**lesson_data))
+            start_datetime += timedelta(days=7)
+            end_datetime += timedelta(days=7)
 
-        lesson = Lesson.objects.create(**serializer.validated_data)
-        lesson_serialized = LessonRecurrentDatetimeSerializer(lesson)
+        Lesson.objects.bulk_create(lessons_to_create)
+        lessons_serialized = LessonSerializer(lessons_to_create, many=True)
 
-        return lesson_serialized.data
+        return lessons_serialized.data
 
     def create_lesson_with_deatils(self, request):
         recurrency = LessonRecurrency.objects.get(
@@ -100,10 +104,10 @@ class LessonView(ModelViewSet):
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
-    def list_mobile_lessons_with_details(self, request):
-        queryset = Lesson.objects.all()
+    def list_mobile_lessons_with_details(self, request, student_class_id):
+        lessons = Lesson.objects.filter(lesson_recurrency__student_class_id=student_class_id)
 
-        lessons_list_serialized = MobileLessonSerializer(queryset, many=True)
+        lessons_list_serialized = MobileLessonSerializer(lessons, many=True)
 
         return Response(lessons_list_serialized.data, status=status.HTTP_200_OK)
 
@@ -159,7 +163,16 @@ class AttendanceView(ModelViewSet):
 
         return Response(attendance_serialized.data, status=status.HTTP_201_CREATED)
 
-    def checkPassKey(self, request):
+    def list_student_attendance(self, request, student_id):
+        attendances = Attendance.objects.filter(student=student_id)
+
+        if not attendances:
+            return Response("Attendances not found", status=status.HTTP_404_NOT_FOUND)
+
+        attendances_serialized = AttendanceSerializerMobile(attendances, many=True)
+        return Response(attendances_serialized.data, status=status.HTTP_200_OK)
+
+    def check_pass_key(self, request):
         lesson_id = request.data.get("lesson_id")
         student_id = request.data.get("student_id")
         passkey = request.data.get("passkey")
@@ -197,6 +210,15 @@ class AttendanceView(ModelViewSet):
 class StudentView(ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+
+    def get_student(self, request, user_id):
+        student = Student.objects.filter(user=user_id).first()
+        if not student:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        student_serialized = StudentSerializer(student)
+
+        return Response(student_serialized.data, status=status.HTTP_200_OK)
 
 
 class SubjectView(ModelViewSet):
@@ -236,6 +258,16 @@ class SubjectView(ModelViewSet):
 
         subjects_serialized = SubjectSerializer(subjects, many=True)
         return Response(subjects_serialized.data, status=status.HTTP_200_OK)
+
+    def list_subject_with_details(self, request):
+        lesson_recurrences = LessonRecurrency.objects.all()
+
+        if not lesson_recurrences:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SubjectsWithDetailsSerializer(lesson_recurrences, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class LessonRecurrencyView(ModelViewSet):
