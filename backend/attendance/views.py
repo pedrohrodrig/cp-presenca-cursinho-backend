@@ -137,6 +137,8 @@ class AttendanceRegistrabilityView(ViewSet):
 class AttendanceView(ModelViewSet):
     queryset = Attendance.objects.all()
     serializer_class = AttendanceSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["lesson", "student"]
 
     def create(self, request):
         serializer = AttendanceSerializer(data=request.data)
@@ -153,11 +155,18 @@ class AttendanceView(ModelViewSet):
         if lesson.lesson_recurrency.student_class != student.student_class:
             return Response("Student do not belong to class", status=status.HTTP_403_FORBIDDEN)
 
-        attendance, created = Attendance.objects.get_or_create(**serializer.validated_data)
+        attendance = Attendance.objects.filter(student=student, lesson=lesson).first()
 
-        if not created:
-            # TODO: melhorar codigo de erro para usuario
+        if attendance:
+            if attendance.status != serializer.validated_data.get("status"):
+                attendance.status = serializer.validated_data.get("status")
+                attendance.save()
+                return Response("Attendance updated", status=status.HTTP_200_OK)    
+            
             return Response("Attendance already registered", status=status.HTTP_400_BAD_REQUEST)
+
+        attendance = Attendance.objects.create(**serializer.validated_data)
+        attendance.save()
 
         attendance_serialized = AttendanceSerializer(attendance)
 
@@ -210,6 +219,17 @@ class AttendanceView(ModelViewSet):
 class StudentView(ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+
+    def list_students_lesson_attendance(self, request, lesson_id):
+        students = Student.objects.all()
+        students_serialized = StudentSerializer(students, many=True)
+
+        for student in students_serialized.data:
+            attendance = Attendance.objects.filter(student=student["id"], lesson=lesson_id).first()
+            student["attendance"] = attendance.status if attendance else "A"
+
+        return Response(students_serialized.data, status=status.HTTP_200_OK)
+    
 
     def get_student(self, request, user_id):
         student = Student.objects.filter(user=user_id).first()

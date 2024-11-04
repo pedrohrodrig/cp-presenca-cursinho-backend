@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from authentication.serializers import UserBasicInfoSerializer
+
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 
 
@@ -59,9 +61,12 @@ class AttendanceSerializerMobile(serializers.ModelSerializer):
 
 
 class StudentSerializer(serializers.ModelSerializer):
+    user = UserBasicInfoSerializer()
+    student_class = StudentClassSerializer()
+
     class Meta:
         model = Student
-        fields = "__all__"
+        fields = ["id", "user", "student_class"]
 
 
 class StudentClassSerializer(serializers.ModelSerializer):
