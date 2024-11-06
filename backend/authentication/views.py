@@ -2,14 +2,20 @@ import secrets
 
 import pandas as pd
 from django.contrib.auth.hashers import make_password
+from django_rest_passwordreset.models import ResetPasswordToken
+from django_rest_passwordreset.signals import reset_password_token_created
+
+from .models import Roles, User
+from .serializers import (
+    UserSerializer,
+    UserBasicInfoSerializer
+)
+from .validators import (
+    duplicated_email_validation,
+)
 from rest_framework import status, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
-
-from .models import Roles, User
-from .serializers import UserBasicInfoSerializer, UserSerializer
-from .utils import send_password_in_email
-from .validators import duplicated_email_validation
 
 
 class UserView(viewsets.ModelViewSet):
@@ -39,7 +45,8 @@ class UserView(viewsets.ModelViewSet):
 
         user_serialized = UserSerializer(user)
 
-        send_password_in_email(user_data["email"], user_data["password"])
+        reset_password_token = ResetPasswordToken.objects.create(user=user)
+        reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
 
         return Response(user_serialized.data, status=status.HTTP_201_CREATED)
 
@@ -109,7 +116,8 @@ class RegisterMultipleView(viewsets.ModelViewSet):
                 user.set_password(user_data["password"])
                 user.save()
 
-                send_password_in_email(user_data["email"], user_data["password"])
+                reset_password_token = ResetPasswordToken.objects.create(user=user)
+                reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
 
                 successful_count += 1
             except Exception as e:
