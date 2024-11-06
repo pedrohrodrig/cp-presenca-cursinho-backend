@@ -25,29 +25,38 @@ urlpatterns = format_suffix_patterns(
             AttendanceRegistrabilityView.as_view({"patch": "update_attendance_registrability"}),
         ),
         path("lesson_with_details/", LessonView.as_view({"get": "list_today_lessons_with_details"})),
-        path("mobile_lesson_with_details/", LessonView.as_view({"get": "list_mobile_lessons_with_details"})),
+        path(
+            "mobile_lesson_with_details/<int:student_class_id>",
+            LessonView.as_view({"get": "list_mobile_lessons_with_details"}),
+        ),
         path("attendance/", AttendanceView.as_view({"post": "create"})),
-        path("attendance/check-passkey", AttendanceView.as_view({"post": "checkPassKey"})),
+        path("attendance/<int:student_id>", AttendanceView.as_view({"get": "list_student_attendance"})),
+        path("attendance/check-passkey", AttendanceView.as_view({"post": "check_pass_key"})),
         path("student/", StudentView.as_view({"get": "list", "post": "create"})),
         path(
             "student/<int:pk>/",
             StudentView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
         ),
-        path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
         path(
-            "subject/<int:pk>",
-            SubjectView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
+            "student/mobile/<int:user_id>/",
+            StudentView.as_view({"get": "get_student"}),
         ),
-        path("student-class/", StudentClassView.as_view({"get": "list", "post": "create"})),
+        path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
+        path("subject_with_details/", SubjectView.as_view({"get": "list_subject_with_details"})),
         path(
-            "student-class/<int:pk>",
-            StudentClassView.as_view(
-                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
-            ),
+            "subject/<int:pk>/",
+            SubjectView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
         ),
         path(
             "subject/<str:main_subject>/",
             SubjectView.as_view({"get": "list_from_main_subject"}),
+        ),
+        path("student-class/", StudentClassView.as_view({"get": "list", "post": "create"})),
+        path(
+            "student-class/<int:pk>/",
+            StudentClassView.as_view(
+                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+            ),
         ),
         path(
             "lesson_recurrency/",
