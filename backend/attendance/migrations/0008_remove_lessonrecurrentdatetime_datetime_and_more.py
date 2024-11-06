@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("attendance", "0005_alter_student_student_class"),
+        ("attendance", "0007_student_user_teacher_subject_teacher_user"),
     ]
 
     operations = [

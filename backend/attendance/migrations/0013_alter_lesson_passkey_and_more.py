@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("attendance", "0014_alter_lessonrecurrentdatetime_end_datetime_and_more"),
+        ("attendance", "0012_alter_lessonrecurrentdatetime_end_datetime_and_more"),
     ]
 
     operations = [

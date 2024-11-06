@@ -14,6 +14,7 @@ pandas = "*"
 openpyxl = "*"
 django-rename-app = "*"
 django-filter = "*"
+django-rest-passwordreset = "*"
 
 [dev-packages]
 pre-commit = "~=2.17"

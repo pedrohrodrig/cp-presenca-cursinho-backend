@@ -37,6 +37,7 @@ urlpatterns = format_suffix_patterns(
             "student/<int:pk>/",
             StudentView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
         ),
+        path("student/lesson_attendance/<int:lesson_id>/", StudentView.as_view({"get": "list_students_lesson_attendance"})),
         path(
             "student/mobile/<int:user_id>/",
             StudentView.as_view({"get": "get_student"}),
