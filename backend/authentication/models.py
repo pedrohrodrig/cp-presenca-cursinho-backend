@@ -56,7 +56,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 def password_reset_token_created(reset_password_token, register=False, *args, **kwargs):
     sitelink = "http://localhost:5173/"
     token = "{}".format(reset_password_token.key)
-    full_link = str(sitelink) + str("auth/password-reset/") + str(token)
+    full_link = str(sitelink) + str("login/password-reset/") + str(token)
 
     context = {
         'full_link': full_link,
