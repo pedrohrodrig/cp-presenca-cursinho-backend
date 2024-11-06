@@ -1,1 +1,4 @@
-web: pip install pipenv && pipenv install && pipenv run python manage.py migrate && pipenv run python manage.py runserver 0.0.0.0:8000
+web: pip install pipenv
+web: pipenv install
+web: pipenv run python manage.py migrate
+web: pipenv run python manage.py runserver 0.0.0.0:8000
