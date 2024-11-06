@@ -13,6 +13,7 @@ djangorestframework-simplejwt = "*"
 pandas = "*"
 openpyxl = "*"
 django-rename-app = "*"
+django-filter = "*"
 
 [dev-packages]
 pre-commit = "~=2.17"
