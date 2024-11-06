@@ -54,8 +54,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(reset_password_token, register=False, *args, **kwargs):
-    # TODO: alterar para variável de ambiente
-    sitelink = "http://localhost:5173/"
+    sitelink = os.getenv("FRONTEND_SITE_LINK", "http://localhost:5173/")
     token = "{}".format(reset_password_token.key)
     full_link = str(sitelink) + str("login/password-reset/") + str(token)
 
