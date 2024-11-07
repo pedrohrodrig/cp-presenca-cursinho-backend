@@ -15,7 +15,7 @@ urlpatterns = format_suffix_patterns(
     path("token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
     path("user/", UserView.as_view({"get": "list", "post": "register"})), 
     path("user/self/", UserView.as_view(actions={"get": "retrieve_self"})),
-    path("user/<int:pk>/", UserView.as_view(actions={"get": "retrieve_basic_info_by_id"})),
+    path("user/<int:pk>/", UserView.as_view(actions={"get": "retrieve_basic_info_by_id", "patch": "update", "delete": "destroy"})),
     path("register_multiple/", RegisterMultipleView.as_view({"post": "register_multiple"})),
     path("password_reset/", include("django_rest_passwordreset.urls", namespace="password_reset")),
     ]

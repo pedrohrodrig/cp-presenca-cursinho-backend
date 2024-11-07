@@ -11,6 +11,7 @@ from django.db import transaction
 
 from .models import Roles, User
 from .serializers import (
+    UserPatchSerializer,
     UserSerializer,
     UserBasicInfoSerializer
 )
@@ -88,6 +89,33 @@ class UserView(viewsets.ModelViewSet):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         serializer = UserBasicInfoSerializer(user)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def update(self, request, pk):
+        user = User.objects.get(id=pk)
+        if not user:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        user_data = {
+            "first_name": request.data.get("first_name"),
+            "last_name": request.data.get("last_name"),
+            "email": request.data.get("email"),
+            "role": Roles.convert_to_int_if_string(request.data.get("role")),
+            "student_class": request.data.get("student_class"),
+        }
+
+        serializer = UserSerializer(user, data=user_data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_user = serializer.save()
+
+        if (user.email != updated_user.email):
+            reset_password_token = ResetPasswordToken.objects.create(user=updated_user)
+            reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
+
+        serializer = UserBasicInfoSerializer(updated_user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
