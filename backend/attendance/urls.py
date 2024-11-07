@@ -24,7 +24,7 @@ urlpatterns = format_suffix_patterns(
             "lesson/<int:pk>/update_attendance_registrability/",
             AttendanceRegistrabilityView.as_view({"patch": "update_attendance_registrability"}),
         ),
-        path("lesson_with_details/", LessonView.as_view({"get": "list_today_lessons_with_details"})),
+        path("lesson_with_details/", LessonView.as_view({"get": "list_lessons_with_details"})),
         path(
             "mobile_lesson_with_details/<int:student_class_id>",
             LessonView.as_view({"get": "list_mobile_lessons_with_details"}),
@@ -32,12 +32,15 @@ urlpatterns = format_suffix_patterns(
         path("attendance/", AttendanceView.as_view({"post": "create"})),
         path("attendance/<int:student_id>", AttendanceView.as_view({"get": "list_student_attendance"})),
         path("attendance/check-passkey", AttendanceView.as_view({"post": "check_pass_key"})),
-        path("student/", StudentView.as_view({"get": "list", "post": "create"})),
+        path("student/", StudentView.as_view({"get": "list_students", "post": "create"})),
         path(
             "student/<int:pk>/",
             StudentView.as_view({"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}),
         ),
-        path("student/lesson_attendance/<int:lesson_id>/", StudentView.as_view({"get": "list_students_lesson_attendance"})),
+        path(
+            "student/lesson_attendance/<int:lesson_id>/",
+            StudentView.as_view({"get": "list_students_lesson_attendance"}),
+        ),
         path(
             "student/mobile/<int:user_id>/",
             StudentView.as_view({"get": "get_student"}),
