@@ -82,7 +82,7 @@ class Teacher(models.Model):
 
 class Student(models.Model):
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE, related_name="student")
-    student_class = models.ForeignKey(StudentClass, on_delete=models.CASCADE, related_name="students")
+    student_class = models.ForeignKey(StudentClass, null=True, blank=True, on_delete=models.CASCADE, related_name="students")
 
 
 class LessonRecurrency(models.Model):
