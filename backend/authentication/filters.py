@@ -9,7 +9,9 @@ class UserFilter(django_filters.FilterSet):
 
     class Meta:
         model = User
-        fields = ["role"]
+        fields = {
+            "role": ["exact", "in"],
+        }
 
     def filter_by_all_fields(self, queryset, name, value):
         return queryset.filter(
