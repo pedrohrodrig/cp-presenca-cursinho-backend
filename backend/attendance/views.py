@@ -8,7 +8,7 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .filters import LessonFilter
+from .filters import LessonFilter, StudentFilter
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -161,8 +161,8 @@ class AttendanceView(ModelViewSet):
             if attendance.status != serializer.validated_data.get("status"):
                 attendance.status = serializer.validated_data.get("status")
                 attendance.save()
-                return Response("Attendance updated", status=status.HTTP_200_OK)    
-            
+                return Response("Attendance updated", status=status.HTTP_200_OK)
+
             return Response("Attendance already registered", status=status.HTTP_400_BAD_REQUEST)
 
         attendance = Attendance.objects.create(**serializer.validated_data)
@@ -217,8 +217,16 @@ class AttendanceView(ModelViewSet):
 
 
 class StudentView(ModelViewSet):
-    queryset = Student.objects.all()
+    queryset = Student.objects.all().order_by("user__first_name", "user__last_name")
     serializer_class = StudentSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = StudentFilter
+
+    def list_students(self, request):
+        queryset = self.filter_queryset(self.get_queryset())
+        students_serialized = StudentSerializer(queryset, many=True)
+
+        return Response(students_serialized.data, status=status.HTTP_200_OK)
 
     def list_students_lesson_attendance(self, request, lesson_id):
         students = Student.objects.all()
@@ -229,7 +237,6 @@ class StudentView(ModelViewSet):
             student["attendance"] = attendance.status if attendance else "A"
 
         return Response(students_serialized.data, status=status.HTTP_200_OK)
-    
 
     def get_student(self, request, user_id):
         student = Student.objects.filter(user=user_id).first()
