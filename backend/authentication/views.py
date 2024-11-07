@@ -4,6 +4,10 @@ import pandas as pd
 from django.contrib.auth.hashers import make_password
 from django_rest_passwordreset.models import ResetPasswordToken
 from django_rest_passwordreset.signals import reset_password_token_created
+from django_filters.rest_framework import DjangoFilterBackend
+
+from .filters import UserFilter
+from django.db import transaction
 
 from .models import Roles, User
 from .serializers import (
@@ -12,43 +16,62 @@ from .serializers import (
 )
 from .validators import (
     duplicated_email_validation,
+    student_class_exists_validation,
 )
 from rest_framework import status, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from attendance.models import Student
+
 
 class UserView(viewsets.ModelViewSet):
     queryset = User.objects.all()
+    serializer_class = UserBasicInfoSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = UserFilter
 
     def register(self, request):
-        user_data = {
-            "email": request.data.get("email"),
-            "first_name": request.data.get("first_name"),
-            "last_name": request.data.get("last_name"),
-            "password": make_password(secrets.token_urlsafe(8)),
-            "role": Roles.convert_to_int_if_string(request.data.get("role")),
-        }
+        try: 
+            user_role = Roles.convert_to_int_if_string(request.data.get("role"))
 
-        serializer = UserSerializer(data=user_data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            user_data = {
+                "email": request.data.get("email"),
+                "first_name": request.data.get("first_name"),
+                "last_name": request.data.get("last_name"),
+                "password": make_password(secrets.token_urlsafe(8)),
+                "role": user_role,
+            }
 
-        user_data = serializer.validated_data
+            serializer = UserSerializer(data=user_data)
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # TODO: alterar função para retornar erro ao invés de lançar exceção
-        duplicated_email_validation(user_data["email"])
+            user_data = serializer.validated_data
 
-        user = User.objects.create_user(**user_data)
-        user.set_password(user_data["password"])
-        user.save()
+            if user_role == Roles.STUDENT:
+                student_class = student_class_exists_validation(request.data.get("student_class"))
 
-        user_serialized = UserSerializer(user)
+            # TODO: alterar função para retornar erro ao invés de lançar exceção
+            duplicated_email_validation(user_data["email"])
 
-        reset_password_token = ResetPasswordToken.objects.create(user=user)
-        reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
+            with transaction.atomic():
+                user = User.objects.create_user(**user_data)
 
-        return Response(user_serialized.data, status=status.HTTP_201_CREATED)
+                if user_role == Roles.STUDENT:
+                    Student.objects.create(user=user, student_class=student_class)
+
+                user.set_password(user_data["password"])
+                user.save()
+
+            user_serialized = UserSerializer(user)
+
+            reset_password_token = ResetPasswordToken.objects.create(user=user)
+            reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
+
+            return Response(user_serialized.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def retrieve_self(self, request):
         user = User.objects.filter(id=request.user.id).first()
@@ -65,13 +88,6 @@ class UserView(viewsets.ModelViewSet):
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         serializer = UserBasicInfoSerializer(user)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def list(self, request):
-        active_users = User.objects.filter(is_active=True)
-
-        serializer = UserBasicInfoSerializer(active_users, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -96,12 +112,14 @@ class RegisterMultipleView(viewsets.ModelViewSet):
         errors = []
 
         for index, row in df.iterrows():
+            user_role = user_role = Roles.convert_to_int_if_string(row["role"])
+
             user_data = {
                 "email": row["email"],
                 "first_name": row["first_name"],
                 "last_name": row["last_name"],
                 "password": make_password(secrets.token_urlsafe(8)),
-                "role": Roles.convert_to_int_if_string(row["role"]),
+                "role": user_role,
             }
             serializer = UserSerializer(data=user_data)
 
@@ -111,10 +129,19 @@ class RegisterMultipleView(viewsets.ModelViewSet):
                 continue
 
             try:
+                if user_role == Roles.STUDENT:
+                    student_class = student_class_exists_validation(row["student_class"])
+
                 duplicated_email_validation(user_data["email"])
-                user = User.objects.create_user(**user_data)
-                user.set_password(user_data["password"])
-                user.save()
+
+                with transaction.atomic():
+                    user = User.objects.create_user(**user_data)
+
+                    if user_role == Roles.STUDENT:
+                        Student.objects.create(user=user, student_class=student_class)
+
+                    user.set_password(user_data["password"])
+                    user.save()
 
                 reset_password_token = ResetPasswordToken.objects.create(user=user)
                 reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
