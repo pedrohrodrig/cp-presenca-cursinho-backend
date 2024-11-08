@@ -286,8 +286,8 @@ class SubjectView(ModelViewSet):
         subjects_serialized = SubjectSerializer(subjects, many=True)
         return Response(subjects_serialized.data, status=status.HTTP_200_OK)
 
-    def list_subject_with_details(self, request):
-        lesson_recurrences = LessonRecurrency.objects.all()
+    def list_subject_with_details(self, request, student_class):
+        lesson_recurrences = LessonRecurrency.objects.filter(student_class=student_class)
 
         if not lesson_recurrences:
             return Response(status=status.HTTP_404_NOT_FOUND)
