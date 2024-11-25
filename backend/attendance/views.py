@@ -9,8 +9,14 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .filters import LessonFilter, StudentFilter
-from .metrics import get_lessons_attendance_percentage, get_students_total_attendance_percentage
+from .filters import LessonFilter, StudentClassFilter, StudentFilter
+from .metrics import (
+    get_attendance_history,
+    get_lessons_attendance_percentage,
+    get_student_classes_avg_attendance_percentage,
+    get_students_total_attendance_percentage,
+    get_subjects_avg_attendance_percentage,
+)
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -341,6 +347,84 @@ class LessonRecurrentDatetimeView(ModelViewSet):
 class StudentClassView(ModelViewSet):
     queryset = StudentClass.objects.all().order_by("name")
     serializer_class = StudentClassSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = StudentClassFilter
+
+    def create_student_class_and_recurrency(self, request):
+        serializer = StudentClassSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        today = timezone.localtime(timezone.now())
+
+        student_class = StudentClass.objects.create(
+            name=serializer.data.get("name"),
+            classroom=serializer.data.get("classroom"),
+            course=serializer.data.get("course", None),
+            modality=serializer.data.get("modality"),
+            start_datetime=today.replace(hour=16, minute=0, second=0, microsecond=0),
+            end_datetime=today.replace(hour=22, minute=0, second=0, microsecond=0),
+        )
+
+        student_class.subjects.set(serializer.data.get("subjects", []))
+        student_class.save()
+
+        subjects = request.data.get("subjects", [])
+
+        for subject in subjects:
+            recurrency_data = {
+                "subject": subject,
+                "student_class": student_class.id,
+            }
+
+            serializer = LessonRecurrencySerializer(data=recurrency_data)
+
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            LessonRecurrency.objects.create(**serializer.validated_data)
+
+        student_class_serialized = StudentClassSerializer(student_class)
+        return Response(student_class_serialized.data, status=status.HTTP_201_CREATED)
+
+    def update_student_class_and_recurrency(self, request, pk):
+        try:
+            student_class = StudentClass.objects.get(pk=pk)
+        except StudentClass.DoesNotExist:
+            return Response({"error": "StudentClass not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StudentClassSerializer(student_class, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        student_class = serializer.save()
+
+        if "subjects" in serializer.validated_data:
+            updated_subjects = serializer.validated_data["subjects"]
+
+            LessonRecurrency.objects.filter(
+                student_class=student_class,
+            ).exclude(subject__in=updated_subjects).delete()
+
+            existing_subject_ids = LessonRecurrency.objects.filter(student_class=student_class).values_list(
+                "subject", flat=True
+            )
+
+            for subject in updated_subjects:
+                if subject.id not in existing_subject_ids:
+                    recurrency_data = {
+                        "subject": subject.id,
+                        "student_class": student_class.id,
+                    }
+
+                    recurrency_serializer = LessonRecurrencySerializer(data=recurrency_data)
+                    if not recurrency_serializer.is_valid():
+                        return Response(recurrency_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                    recurrency_serializer.save()
+
+        student_class_serialized = StudentClassSerializer(student_class)
+        return Response(student_class_serialized.data, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -360,4 +444,30 @@ def lessons_attendance_percentage(request):
     subject_id = request.GET.get("subject_id")
 
     data = get_lessons_attendance_percentage(lesson_id, student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def subjects_avg_attendance_percentage(request):
+    student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
+    subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
+    data = get_subjects_avg_attendance_percentage(student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+@api_view(["GET"])
+
+
+def student_classes_avg_attendance_percentage(request):
+    student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
+    subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
+    data = get_student_classes_avg_attendance_percentage(student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+@api_view(["GET"])
+
+
+def attendance_history(request):
+    timespan = request.GET.get("timespan") if request.GET.get("timespan") else "month"
+    student_id = int(request.GET.get("student_id")) if request.GET.get("student_id") else None
+    student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
+    subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
+    data = get_attendance_history(timespan, student_id, student_class_id, subject_id)
     return Response(data, status=status.HTTP_200_OK)
