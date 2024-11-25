@@ -10,6 +10,7 @@ from .views import (
     StudentClassView,
     StudentView,
     SubjectView,
+    students_total_attendance_percentage,
 )
 
 urlpatterns = format_suffix_patterns(
@@ -93,5 +94,6 @@ urlpatterns = format_suffix_patterns(
                 {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
             ),
         ),
+        path("metrics/students-total-attendance/", students_total_attendance_percentage),
     ]
 )
