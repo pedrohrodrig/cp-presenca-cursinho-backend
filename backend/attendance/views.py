@@ -5,10 +5,12 @@ from django.test import RequestFactory
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .filters import LessonFilter, StudentClassFilter, StudentFilter
+from .metrics import get_students_total_attendance_percentage
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -417,3 +419,13 @@ class StudentClassView(ModelViewSet):
 
         student_class_serialized = StudentClassSerializer(student_class)
         return Response(student_class_serialized.data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def students_total_attendance_percentage(request):
+    student_id = request.GET.get("student_id")
+    student_class_id = request.GET.get("student_class_id")
+    subject_id = request.GET.get("subject_id")
+
+    data = get_students_total_attendance_percentage(student_id, student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
