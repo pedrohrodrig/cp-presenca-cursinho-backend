@@ -10,6 +10,8 @@ class LessonFilter(django_filters.FilterSet):
     subject = django_filters.CharFilter(field_name="lesson_recurrency__subject", lookup_expr="name__exact")
     name = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
     day = django_filters.NumberFilter(field_name="start_datetime", lookup_expr="day__exact")
+    month = django_filters.NumberFilter(field_name="start_datetime", lookup_expr="month__exact")
+    year = django_filters.NumberFilter(field_name="start_datetime", lookup_expr="year__exact")
 
     class Meta:
         model = Lesson
