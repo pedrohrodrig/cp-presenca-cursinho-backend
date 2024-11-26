@@ -2,7 +2,7 @@ import django_filters
 from django.db.models import Value
 from django.db.models.functions import Concat
 
-from .models import Lesson, Student
+from .models import Lesson, Student, StudentClass, Subject
 
 
 class LessonFilter(django_filters.FilterSet):
@@ -30,3 +30,15 @@ class StudentFilter(django_filters.FilterSet):
         queryset = queryset.annotate(full_name=Concat("user__first_name", Value(" "), "user__last_name"))
 
         return queryset.filter(full_name__icontains=value)
+
+
+class StudentClassFilter(django_filters.FilterSet):
+    id = django_filters.NumberFilter(field_name="id", lookup_expr="in")
+    name = django_filters.CharFilter(field_name="name", lookup_expr="icontains")
+    subject = django_filters.ModelMultipleChoiceFilter(
+        field_name="subjects", queryset=Subject.objects.all(), to_field_name="id", conjoined=False
+    )
+
+    class Meta:
+        model = StudentClass
+        fields = {}
