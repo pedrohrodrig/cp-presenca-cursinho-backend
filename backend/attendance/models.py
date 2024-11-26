@@ -67,7 +67,7 @@ class StudentClass(models.Model):
     classroom = models.CharField(max_length=10, blank=True, null=True)
     course = models.CharField(max_length=100)
     modality = models.CharField(max_length=2, choices=ModalityChoices, default=ModalityChoices.INCLASS)
-    subjects = models.ManyToManyField(Subject, related_name="student_classes")
+    subjects = models.ManyToManyField(Subject, related_name="student_classes", blank=True, null=True)
     start_datetime = models.DateTimeField(default=timezone.now)
     end_datetime = models.DateTimeField(default=timezone.now)
 
@@ -82,7 +82,9 @@ class Teacher(models.Model):
 
 class Student(models.Model):
     user = models.OneToOneField(User, null=True, on_delete=models.CASCADE, related_name="student")
-    student_class = models.ForeignKey(StudentClass, null=True, blank=True, on_delete=models.CASCADE, related_name="students")
+    student_class = models.ForeignKey(
+        StudentClass, null=True, blank=True, on_delete=models.CASCADE, related_name="students"
+    )
 
 
 class LessonRecurrency(models.Model):
