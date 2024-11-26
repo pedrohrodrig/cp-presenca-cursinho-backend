@@ -8,7 +8,7 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
-from .filters import LessonFilter, StudentFilter
+from .filters import LessonFilter, StudentClassFilter, StudentFilter
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -252,31 +252,6 @@ class SubjectView(ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
 
-    def create_subject_and_recurrency(self, request):
-        serializer = SubjectSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        subject = Subject.objects.create(**serializer.validated_data)
-        student_classes = StudentClass.objects.all()
-
-        for student_class in student_classes:
-            recurrency_data = {
-                "subject": subject.id,
-                "student_class": student_class.id,
-            }
-
-            serializer = LessonRecurrencySerializer(data=recurrency_data)
-
-            if not serializer.is_valid():
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-            LessonRecurrency.objects.create(**serializer.validated_data)
-
-        subject_serialized = SubjectSerializer(subject)
-        return Response(subject_serialized.data, status=status.HTTP_201_CREATED)
-
     def list_from_main_subject(self, request, main_subject):
         subjects = Subject.objects.filter(main_subject=main_subject)
 
@@ -364,3 +339,81 @@ class LessonRecurrentDatetimeView(ModelViewSet):
 class StudentClassView(ModelViewSet):
     queryset = StudentClass.objects.all().order_by("name")
     serializer_class = StudentClassSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = StudentClassFilter
+
+    def create_student_class_and_recurrency(self, request):
+        serializer = StudentClassSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        today = timezone.localtime(timezone.now())
+
+        student_class = StudentClass.objects.create(
+            name=serializer.data.get("name"),
+            classroom=serializer.data.get("classroom"),
+            course=serializer.data.get("course", None),
+            modality=serializer.data.get("modality"),
+            start_datetime=today.replace(hour=16, minute=0, second=0, microsecond=0),
+            end_datetime=today.replace(hour=22, minute=0, second=0, microsecond=0),
+        )
+
+        student_class.subjects.set(serializer.data.get("subjects", []))
+        student_class.save()
+
+        subjects = request.data.get("subjects", [])
+
+        for subject in subjects:
+            recurrency_data = {
+                "subject": subject,
+                "student_class": student_class.id,
+            }
+
+            serializer = LessonRecurrencySerializer(data=recurrency_data)
+
+            if not serializer.is_valid():
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+            LessonRecurrency.objects.create(**serializer.validated_data)
+
+        student_class_serialized = StudentClassSerializer(student_class)
+        return Response(student_class_serialized.data, status=status.HTTP_201_CREATED)
+
+    def update_student_class_and_recurrency(self, request, pk):
+        try:
+            student_class = StudentClass.objects.get(pk=pk)
+        except StudentClass.DoesNotExist:
+            return Response({"error": "StudentClass not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = StudentClassSerializer(student_class, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        student_class = serializer.save()
+
+        if "subjects" in serializer.validated_data:
+            updated_subjects = serializer.validated_data["subjects"]
+
+            LessonRecurrency.objects.filter(
+                student_class=student_class,
+            ).exclude(subject__in=updated_subjects).delete()
+
+            existing_subject_ids = LessonRecurrency.objects.filter(student_class=student_class).values_list(
+                "subject", flat=True
+            )
+
+            for subject in updated_subjects:
+                if subject.id not in existing_subject_ids:
+                    recurrency_data = {
+                        "subject": subject.id,
+                        "student_class": student_class.id,
+                    }
+
+                    recurrency_serializer = LessonRecurrencySerializer(data=recurrency_data)
+                    if not recurrency_serializer.is_valid():
+                        return Response(recurrency_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                    recurrency_serializer.save()
+
+        student_class_serialized = StudentClassSerializer(student_class)
+        return Response(student_class_serialized.data, status=status.HTTP_200_OK)
