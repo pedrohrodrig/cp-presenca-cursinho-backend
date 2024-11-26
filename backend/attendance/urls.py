@@ -45,7 +45,7 @@ urlpatterns = format_suffix_patterns(
             "student/mobile/<int:user_id>/",
             StudentView.as_view({"get": "get_student"}),
         ),
-        path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
+        path("subject/", SubjectView.as_view({"get": "list", "post": "create"})),
         path("subject_with_details/<int:student_class>", SubjectView.as_view({"get": "list_subject_with_details"})),
         path(
             "subject/<int:pk>/",
@@ -54,13 +54,6 @@ urlpatterns = format_suffix_patterns(
         path(
             "subject/<str:main_subject>/",
             SubjectView.as_view({"get": "list_from_main_subject"}),
-        ),
-        path("student-class/", StudentClassView.as_view({"get": "list", "post": "create"})),
-        path(
-            "student-class/<int:pk>/",
-            StudentClassView.as_view(
-                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
-            ),
         ),
         path(
             "lesson_recurrency/",
@@ -86,11 +79,18 @@ urlpatterns = format_suffix_patterns(
                 {"get": "retrieve", "put": "update", "patch": "update_datetime_with_lessons", "delete": "destroy"}
             ),
         ),
-        path("student_class/", StudentClassView.as_view({"get": "list", "post": "create"})),
+        path(
+            "student_class/", StudentClassView.as_view({"get": "list", "post": "create_student_class_and_recurrency"})
+        ),
         path(
             "student_class/<int:pk>/",
             StudentClassView.as_view(
-                {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
+                {
+                    "get": "retrieve",
+                    "put": "update",
+                    "patch": "update_student_class_and_recurrency",
+                    "delete": "destroy",
+                }
             ),
         ),
     ]
