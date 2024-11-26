@@ -347,13 +347,15 @@ class StudentClassView(ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        print(serializer.data)
+        today = timezone.localtime(timezone.now())
 
         student_class = StudentClass.objects.create(
             name=serializer.data.get("name"),
             classroom=serializer.data.get("classroom"),
             course=serializer.data.get("course", None),
             modality=serializer.data.get("modality"),
+            start_datetime=today.replace(hour=16, minute=0, second=0, microsecond=0),
+            end_datetime=today.replace(hour=22, minute=0, second=0, microsecond=0),
         )
 
         student_class.subjects.set(serializer.data.get("subjects", []))
