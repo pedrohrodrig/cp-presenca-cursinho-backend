@@ -45,7 +45,7 @@ urlpatterns = format_suffix_patterns(
             "student/mobile/<int:user_id>/",
             StudentView.as_view({"get": "get_student"}),
         ),
-        path("subject/", SubjectView.as_view({"get": "list", "post": "create"})),
+        path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
         path("subject_with_details/<int:student_class>", SubjectView.as_view({"get": "list_subject_with_details"})),
         path(
             "subject/<int:pk>/",
