@@ -17,6 +17,6 @@ urlpatterns = format_suffix_patterns(
     path("user/self/", UserView.as_view(actions={"get": "retrieve_self"})),
     path("user/<int:pk>/", UserView.as_view(actions={"get": "retrieve_basic_info_by_id"})),
     path("register_multiple/", RegisterMultipleView.as_view({"post": "register_multiple"})),
-    path("password_reset/", include("django_rest_passwordreset.urls", namespace="password_reset")),
+    path("password_reset", include("django_rest_passwordreset.urls", namespace="password_reset")),
     ]
 )
