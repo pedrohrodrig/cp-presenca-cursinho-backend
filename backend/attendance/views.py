@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .filters import LessonFilter, StudentFilter
-from .metrics import get_students_total_attendance_percentage
+from .metrics import get_lessons_attendance_percentage, get_students_total_attendance_percentage
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -350,4 +350,14 @@ def students_total_attendance_percentage(request):
     subject_id = request.GET.get("subject_id")
 
     data = get_students_total_attendance_percentage(student_id, student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def lessons_attendance_percentage(request):
+    lesson_id = request.GET.get("lesson_id")
+    student_class_id = request.GET.get("student_class_id")
+    subject_id = request.GET.get("subject_id")
+
+    data = get_lessons_attendance_percentage(lesson_id, student_class_id, subject_id)
     return Response(data, status=status.HTTP_200_OK)
