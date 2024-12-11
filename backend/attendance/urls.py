@@ -10,6 +10,7 @@ from .views import (
     StudentClassView,
     StudentView,
     SubjectView,
+    lessons_attendance_percentage,
     students_total_attendance_percentage,
 )
 
@@ -95,5 +96,6 @@ urlpatterns = format_suffix_patterns(
             ),
         ),
         path("metrics/students-total-attendance/", students_total_attendance_percentage),
+        path("metrics/lessons_attendance_percentage/", lessons_attendance_percentage),
     ]
 )

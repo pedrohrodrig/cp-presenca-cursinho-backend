@@ -94,7 +94,7 @@ def get_lessons_attendance_percentage(lesson_id=None, student_class_id=None, sub
             lesson_recurrency__student_class__id__in=student_classes_id,
             lesson_recurrency__subject__id__in=subjects_id,
         )
-        .values(lesson_id=F("id"), subject_id=F("esson_recurrency__subject__id"))
+        .values(lesson_id=F("id"), subject_id=F("lesson_recurrency__subject__id"))
         .annotate(total_students=Count("lesson_recurrency__student_class__students"))
     )
 
@@ -105,7 +105,7 @@ def get_lessons_attendance_percentage(lesson_id=None, student_class_id=None, sub
             lesson__lesson_recurrency__subject__id__in=subjects_id,
             status=Attendance.AttendanceChoices.PRESENT,
         )
-        .values(lesson_id=F("lesson__id"))
+        .values(les_id=F("lesson__id"))
         .annotate(
             present_students=Count("student"),
         )
@@ -118,7 +118,7 @@ def get_lessons_attendance_percentage(lesson_id=None, student_class_id=None, sub
         total_students = lesson["total_students"]
 
         present_students = next(
-            (att["present_students"] for att in present_students_per_lesson if att["lesson_id"] == les_id), 0
+            (att["present_students"] for att in present_students_per_lesson if att["les_id"] == les_id), 0
         )
 
         attendance_percentage = (present_students / total_students) * 100 if total_students > 0 else 0
