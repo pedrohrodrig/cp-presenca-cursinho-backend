@@ -94,8 +94,8 @@ class LessonRecurrency(models.Model):
 
 class LessonRecurrentDatetime(models.Model):
     lesson_recurrency = models.ForeignKey(LessonRecurrency, on_delete=models.CASCADE, related_name="regular_datetimes")
-    start_datetime = models.DateTimeField(default=datetime.now())
-    end_datetime = models.DateTimeField(default=datetime.now())
+    start_datetime = models.DateTimeField(auto_now_add=True)
+    end_datetime = models.DateTimeField(auto_now_add=True)
     day_of_week = models.IntegerField(default=0, validators=[MaxValueValidator(6), MinValueValidator(0)])
 
 
