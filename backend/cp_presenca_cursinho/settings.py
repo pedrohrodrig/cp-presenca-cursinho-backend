@@ -65,6 +65,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# Configuração para arquivos de mídia
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+
 # Retirar código abaixo em produção?
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -73,7 +78,7 @@ ROOT_URLCONF = "cp_presenca_cursinho.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR/"templates"],
+        "DIRS": [BASE_DIR / "templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
