@@ -2,27 +2,20 @@ import secrets
 
 import pandas as pd
 from django.contrib.auth.hashers import make_password
+from django.db import transaction
+from django_filters.rest_framework import DjangoFilterBackend
 from django_rest_passwordreset.models import ResetPasswordToken
 from django_rest_passwordreset.signals import reset_password_token_created
-from django_filters.rest_framework import DjangoFilterBackend
-
-from .filters import UserFilter
-from django.db import transaction
-
-from .models import Roles, User
-from .serializers import (
-    UserSerializer,
-    UserBasicInfoSerializer
-)
-from .validators import (
-    duplicated_email_validation,
-    student_class_exists_validation,
-)
 from rest_framework import status, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from attendance.models import Student
+
+from .filters import UserFilter
+from .models import Roles, User
+from .serializers import UserBasicInfoSerializer, UserSerializer
+from .validators import duplicated_email_validation, student_class_exists_validation
 
 
 class UserView(viewsets.ModelViewSet):
@@ -32,7 +25,7 @@ class UserView(viewsets.ModelViewSet):
     filterset_class = UserFilter
 
     def register(self, request):
-        try: 
+        try:
             user_role = Roles.convert_to_int_if_string(request.data.get("role"))
 
             user_data = {
@@ -67,11 +60,26 @@ class UserView(viewsets.ModelViewSet):
             user_serialized = UserSerializer(user)
 
             reset_password_token = ResetPasswordToken.objects.create(user=user)
-            reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
+            reset_password_token_created.send(
+                sender=self.__class__, reset_password_token=reset_password_token, register=True
+            )
 
             return Response(user_serialized.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def set_profile_photo(self, request, user_id):
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        print(request.FILES)
+        profile_image = request.FILES.get("profile_image")
+
+        if profile_image:
+            user.profile_photo = profile_image
+            user.save()
+            return Response({"message": "Image uploaded successfully"}, status=status.HTTP_200_OK)
+        return Response({"error": "No image provided."}, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve_self(self, request):
         user = User.objects.filter(id=request.user.id).first()
@@ -144,7 +152,9 @@ class RegisterMultipleView(viewsets.ModelViewSet):
                     user.save()
 
                 reset_password_token = ResetPasswordToken.objects.create(user=user)
-                reset_password_token_created.send(sender=self.__class__, reset_password_token=reset_password_token, register=True)
+                reset_password_token_created.send(
+                    sender=self.__class__, reset_password_token=reset_password_token, register=True
+                )
 
                 successful_count += 1
             except Exception as e:

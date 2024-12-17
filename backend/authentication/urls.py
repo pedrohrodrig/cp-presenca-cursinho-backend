@@ -1,22 +1,19 @@
 from django.urls import include, path
 from rest_framework.urlpatterns import format_suffix_patterns
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenBlacklistView
-)
+from rest_framework_simplejwt.views import TokenBlacklistView, TokenObtainPairView, TokenRefreshView
 
-from .views import UserView, RegisterMultipleView
+from .views import RegisterMultipleView, UserView
 
 urlpatterns = format_suffix_patterns(
     [
-    path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
-    path("user/", UserView.as_view({"get": "list", "post": "register"})), 
-    path("user/self/", UserView.as_view(actions={"get": "retrieve_self"})),
-    path("user/<int:pk>/", UserView.as_view(actions={"get": "retrieve_basic_info_by_id"})),
-    path("register_multiple/", RegisterMultipleView.as_view({"post": "register_multiple"})),
-    path("password_reset", include("django_rest_passwordreset.urls", namespace="password_reset")),
+        path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+        path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+        path("token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
+        path("user/", UserView.as_view({"get": "list", "post": "register"})), 
+        path("user/self/", UserView.as_view(actions={"get": "retrieve_self"})),
+        path("user/update_photo/<int:user_id>", UserView.as_view({"post": "set_profile_photo"})),
+        path("user/<int:pk>/", UserView.as_view(actions={"get": "retrieve_basic_info_by_id"})),
+        path("register_multiple/", RegisterMultipleView.as_view({"post": "register_multiple"})),
+        path("password_reset", include("django_rest_passwordreset.urls", namespace="password_reset")),
     ]
 )
