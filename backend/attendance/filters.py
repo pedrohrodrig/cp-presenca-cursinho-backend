@@ -21,6 +21,9 @@ class LessonFilter(django_filters.FilterSet):
 
 
 class StudentFilter(django_filters.FilterSet):
+    lesson_id = django_filters.NumberFilter(
+        field_name="student_class__lesson_recurrences__lessons", lookup_expr="id__exact"
+    )
     student_class = django_filters.CharFilter(field_name="student_class", lookup_expr="name__exact")
     name = django_filters.CharFilter(method="filter_full_name")
 
