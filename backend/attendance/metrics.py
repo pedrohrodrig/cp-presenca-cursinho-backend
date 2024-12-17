@@ -1,6 +1,9 @@
 from collections import defaultdict
+from datetime import timedelta
 
-from django.db.models import Count, F
+from django.db.models import Count, F, Func
+from django.db.models.functions import TruncDay, TruncHour, TruncWeek
+from django.utils.timezone import localtime, now
 
 from .models import Attendance, Lesson, Student, StudentClass, Subject
 
@@ -65,6 +68,7 @@ def get_students_total_attendance_percentage(student_id=None, student_class_id=N
         students_total_attendance_percentage.append(
             {
                 "student_id": std_id,
+                "student": f"{Student.objects.get(id=std_id).user.first_name} {Student.objects.get(id=std_id).user.last_name}",
                 "class_id": class_id,
                 "subject_id": subject_id,
                 "percentage_attendance": attendance_percentage,
@@ -94,7 +98,11 @@ def get_lessons_attendance_percentage(lesson_id=None, student_class_id=None, sub
             lesson_recurrency__student_class__id__in=student_classes_id,
             lesson_recurrency__subject__id__in=subjects_id,
         )
-        .values(lesson_id=F("id"), subject_id=F("lesson_recurrency__subject__id"))
+        .values(
+            lesson_id=F("id"),
+            subject_id=F("lesson_recurrency__subject__id"),
+            student_class_id=F("lesson_recurrency__student_class__id"),
+        )
         .annotate(total_students=Count("lesson_recurrency__student_class__students"))
     )
 
@@ -114,6 +122,7 @@ def get_lessons_attendance_percentage(lesson_id=None, student_class_id=None, sub
     lesson_attendance_percentage = []
     for lesson in total_students_per_lesson:
         les_id = lesson["lesson_id"]
+        std_class_id = lesson["student_class_id"]
         subj_id = lesson["subject_id"]
         total_students = lesson["total_students"]
 
@@ -125,6 +134,7 @@ def get_lessons_attendance_percentage(lesson_id=None, student_class_id=None, sub
         lesson_attendance_percentage.append(
             {
                 "lesson_id": les_id,
+                "student_class_id": std_class_id,
                 "subject_id": subj_id,
                 "attendance_percentage": attendance_percentage,
             }
@@ -175,13 +185,18 @@ def get_student_lesson_attendance(student_id, subject_id=None):
 
 
 """
-Returns the average attendance of each Subject accross all Lessons all StudentClasses.
+Returns the average attendance of each Subject accross all Lessons and StudentClasses.
 Can return the average attendance of a specific Subject if subject_id is given and the
 average attendance accross Lessons of a specific StudentClass if student_class_id is given.
 """
 
 
 def get_subjects_avg_attendance_percentage(student_class_id=None, subject_id=None):
+    subjects_id = [subject_id] if subject_id else Subject.objects.all().values_list("id", flat=True)
+    student_classes_id = (
+        [student_class_id] if student_class_id else StudentClass.objects.all().values_list("id", flat=True)
+    )
+
     lesson_attendance_percentage = get_lessons_attendance_percentage(
         student_class_id=student_class_id, subject_id=subject_id
     )
@@ -195,9 +210,17 @@ def get_subjects_avg_attendance_percentage(student_class_id=None, subject_id=Non
         subject_totals[subj_id]["total_percentage"] += attendance_percentage
         subject_totals[subj_id]["lesson_count"] += 1
 
+    for subj_id in Subject.objects.filter(id__in=subjects_id, student_classes__id__in=student_classes_id).values_list(
+        "id", flat=True
+    ):
+        if subj_id not in subject_totals:
+            subject_totals[subj_id]["total_percentage"] = 0
+            subject_totals[subj_id]["lesson_count"] = 0
+
     subject_avg_attendance_percentage = [
         {
             "subject_id": subj_id,
+            "subject": Subject.objects.get(id=subj_id).name,
             "average_attendance_percentage": (totals["total_percentage"] / totals["lesson_count"])
             if totals["lesson_count"] > 0
             else 0,
@@ -206,6 +229,53 @@ def get_subjects_avg_attendance_percentage(student_class_id=None, subject_id=Non
     ]
 
     return subject_avg_attendance_percentage
+
+
+"""
+Returns the average attendance of each Student Class accross all Lessons and Subjects.
+Can return the average attendance of a specific Class if student_class_id is given and the
+average attendance accross Lessons of a specific Subject if subject_id is given.
+"""
+
+
+def get_student_classes_avg_attendance_percentage(student_class_id=None, subject_id=None):
+    subjects_id = [subject_id] if subject_id else Subject.objects.all().values_list("id", flat=True)
+    student_classes_id = (
+        [student_class_id] if student_class_id else StudentClass.objects.all().values_list("id", flat=True)
+    )
+
+    lesson_attendance_percentage = get_lessons_attendance_percentage(
+        student_class_id=student_class_id, subject_id=subject_id
+    )
+
+    student_class_totals = defaultdict(lambda: {"total_percentage": 0, "lesson_count": 0})
+
+    for lesson in lesson_attendance_percentage:
+        st_class_id = lesson["student_class_id"]
+        attendance_percentage = lesson["attendance_percentage"]
+
+        student_class_totals[st_class_id]["total_percentage"] += attendance_percentage
+        student_class_totals[st_class_id]["lesson_count"] += 1
+
+    for st_class_id in StudentClass.objects.filter(id__in=student_classes_id, subjects__id__in=subjects_id).values_list(
+        "id", flat=True
+    ):
+        if st_class_id not in student_class_totals:
+            student_class_totals[st_class_id]["total_percentage"] = 0
+            student_class_totals[st_class_id]["lesson_count"] = 0
+
+    student_class_avg_attendance_percentage = [
+        {
+            "student_class_id": st_class_id,
+            "student_class": StudentClass.objects.get(id=st_class_id).name,
+            "average_attendance_percentage": (totals["total_percentage"] / totals["lesson_count"])
+            if totals["lesson_count"] > 0
+            else 0,
+        }
+        for st_class_id, totals in student_class_totals.items()
+    ]
+
+    return student_class_avg_attendance_percentage
 
 
 """
@@ -255,3 +325,81 @@ def get_student_attendance_percentage_per_subject(student_id, subject_id=None):
         )
 
     return student_attendance_percentage_per_subject
+
+
+"""
+Returns the attendance history considering all students, subjects or classes. Can be divided in hours, days or weeks.
+Can return the history of a specific student, class or subject if student_id, student_class_id or subject_id is given.
+"""
+
+
+def get_attendance_history(timespan="month", student_id=None, student_class_id=None, subject_id=None):
+    students_id = [student_id] if student_id else Student.objects.all().values_list("id", flat=True)
+    student_classes_id = (
+        [student_class_id] if student_class_id else StudentClass.objects.all().values_list("id", flat=True)
+    )
+    subjects_id = [subject_id] if subject_id else Subject.objects.all().values_list("id", flat=True)
+
+    current_time = localtime(now())
+    if timespan == "day":
+        start_time = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = start_time + timedelta(days=1)
+        group_by = TruncHour("register_datetime")  # Group by hour
+    elif timespan == "month":
+        start_time = current_time.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_time = (start_time + timedelta(days=32)).replace(day=1)  # First day of next month
+        group_by = TruncDay("register_datetime")  # Group by day
+    elif timespan == "year":
+        start_time = current_time.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_time = start_time.replace(year=start_time.year + 1)  # First day of next year
+        group_by = TruncWeek("register_datetime")  # Group by week
+    else:
+        timespan = "month"
+        start_time = current_time.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_time = (start_time + timedelta(days=32)).replace(day=1)  # First day of next month
+        group_by = TruncDay("register_datetime")  # Group by day
+
+    attendance_filter = Attendance.objects.filter(
+        status=Attendance.AttendanceChoices.PRESENT,
+        register_datetime__range=(start_time, end_time),
+        student__id__in=students_id,
+        student__student_class__id__in=student_classes_id,
+        lesson__lesson_recurrency__subject__id__in=subjects_id,
+    )
+
+    grouping_fields = ["time_period"]
+    if (not student_id and not student_class_id and subject_id) or (
+        not student_id and not student_class_id and not subject_id
+    ):
+        grouping_fields.append("student_class_id")
+    elif not student_id and not subject_id and student_class_id:
+        grouping_fields.append("subject_id")
+
+    attendance_groups = (
+        attendance_filter.annotate(
+            time_period=group_by,
+            student_class_id=F("student__student_class__id"),
+            subject_id=F("lesson__lesson_recurrency__subject__id"),
+        )
+        .values(*grouping_fields)
+        .annotate(total_attendance=Count("id"))
+        .order_by("time_period")
+    )
+
+    # Format the results
+    attendance_history = []
+    for group in attendance_groups:
+        result = {
+            "time_period": group["time_period"],
+            "timespan": timespan,
+            "total_attendance": group["total_attendance"],
+        }
+        if "student_class_id" in group:
+            result["student_class_id"] = group["student_class_id"]
+            result["student_class"] = StudentClass.objects.get(id=group["student_class_id"]).name
+        if "subject_id" in group:
+            result["subject_id"] = group["subject_id"]
+            result["subject"] = Subject.objects.get(id=group["subject_id"]).name
+        attendance_history.append(result)
+
+    return attendance_history
