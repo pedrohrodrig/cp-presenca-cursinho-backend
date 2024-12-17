@@ -10,6 +10,11 @@ from .views import (
     StudentClassView,
     StudentView,
     SubjectView,
+    attendance_history,
+    lessons_attendance_percentage,
+    student_classes_avg_attendance_percentage,
+    students_total_attendance_percentage,
+    subjects_avg_attendance_percentage,
 )
 
 urlpatterns = format_suffix_patterns(
@@ -45,7 +50,7 @@ urlpatterns = format_suffix_patterns(
             "student/mobile/<int:user_id>/",
             StudentView.as_view({"get": "get_student"}),
         ),
-        path("subject/", SubjectView.as_view({"get": "list", "post": "create_subject_and_recurrency"})),
+        path("subject/", SubjectView.as_view({"get": "list", "post": "create"})),
         path("subject_with_details/<int:student_class>", SubjectView.as_view({"get": "list_subject_with_details"})),
         path(
             "subject/<int:pk>/",
@@ -93,5 +98,10 @@ urlpatterns = format_suffix_patterns(
                 }
             ),
         ),
+        path("metrics/students-total-attendance/", students_total_attendance_percentage),
+        path("metrics/lessons_attendance_percentage/", lessons_attendance_percentage),
+        path("metrics/subjects_avg_attendance_percentage/", subjects_avg_attendance_percentage),
+        path("metrics/student_classes_avg_attendance_percentage/", student_classes_avg_attendance_percentage),
+        path("metrics/attendance_history/", attendance_history),
     ]
 )

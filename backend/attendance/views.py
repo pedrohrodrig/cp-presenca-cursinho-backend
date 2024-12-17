@@ -5,10 +5,18 @@ from django.test import RequestFactory
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, status
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from .filters import LessonFilter, StudentClassFilter, StudentFilter
+from .metrics import (
+    get_attendance_history,
+    get_lessons_attendance_percentage,
+    get_student_classes_avg_attendance_percentage,
+    get_students_total_attendance_percentage,
+    get_subjects_avg_attendance_percentage,
+)
 from .models import Attendance, Lesson, LessonRecurrency, LessonRecurrentDatetime, Student, StudentClass, Subject
 from .serializers import (
     AttendanceSerializer,
@@ -229,7 +237,7 @@ class StudentView(ModelViewSet):
         return Response(students_serialized.data, status=status.HTTP_200_OK)
 
     def list_students_lesson_attendance(self, request, lesson_id):
-        students = Student.objects.all()
+        students = self.filter_queryset(self.get_queryset())
         students_serialized = StudentSerializer(students, many=True)
 
         for student in students_serialized.data:
@@ -417,3 +425,49 @@ class StudentClassView(ModelViewSet):
 
         student_class_serialized = StudentClassSerializer(student_class)
         return Response(student_class_serialized.data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def students_total_attendance_percentage(request):
+    student_id = request.GET.get("student_id")
+    student_class_id = request.GET.get("student_class_id")
+    subject_id = request.GET.get("subject_id")
+
+    data = get_students_total_attendance_percentage(student_id, student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def lessons_attendance_percentage(request):
+    lesson_id = request.GET.get("lesson_id")
+    student_class_id = request.GET.get("student_class_id")
+    subject_id = request.GET.get("subject_id")
+
+    data = get_lessons_attendance_percentage(lesson_id, student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def subjects_avg_attendance_percentage(request):
+    student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
+    subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
+    data = get_subjects_avg_attendance_percentage(student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def student_classes_avg_attendance_percentage(request):
+    student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
+    subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
+    data = get_student_classes_avg_attendance_percentage(student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def attendance_history(request):
+    timespan = request.GET.get("timespan") if request.GET.get("timespan") else "month"
+    student_id = int(request.GET.get("student_id")) if request.GET.get("student_id") else None
+    student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
+    subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
+    data = get_attendance_history(timespan, student_id, student_class_id, subject_id)
+    return Response(data, status=status.HTTP_200_OK)
