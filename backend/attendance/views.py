@@ -453,17 +453,17 @@ def subjects_avg_attendance_percentage(request):
     subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
     data = get_subjects_avg_attendance_percentage(student_class_id, subject_id)
     return Response(data, status=status.HTTP_200_OK)
+
+
 @api_view(["GET"])
-
-
 def student_classes_avg_attendance_percentage(request):
     student_class_id = int(request.GET.get("student_class_id")) if request.GET.get("student_class_id") else None
     subject_id = int(request.GET.get("subject_id")) if request.GET.get("subject_id") else None
     data = get_student_classes_avg_attendance_percentage(student_class_id, subject_id)
     return Response(data, status=status.HTTP_200_OK)
+
+
 @api_view(["GET"])
-
-
 def attendance_history(request):
     timespan = request.GET.get("timespan") if request.GET.get("timespan") else "month"
     student_id = int(request.GET.get("student_id")) if request.GET.get("student_id") else None
